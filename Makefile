@@ -13,6 +13,9 @@ test: fmt
 build: test
 	cargo build
 
+flamegraph:
+	cargo flamegraph --example visualizer
+
 release: test
 	cargo build --release
 

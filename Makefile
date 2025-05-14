@@ -1,10 +1,19 @@
-test:
+.PHONY: all
+all: build
+
+lint:
+	cargo clippy
+
+fmt: lint
+	cargo fmt
+
+test: fmt
 	cargo test
 
-build:
+build: test
 	cargo build
 
-release:
+release: test
 	cargo build --release
 
 clean:

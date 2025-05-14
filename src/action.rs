@@ -1,4 +1,4 @@
-use crate::{State, Result, GoapError};
+use crate::{GoapError, Result, State};
 
 /// Represents an action in the GOAP system
 #[derive(Debug, Clone)]
@@ -72,10 +72,10 @@ mod tests {
     fn test_can_perform_with_matching_preconditions() {
         let mut action = Action::new("test_action", 1.0).unwrap();
         action.preconditions.set("has_tool", true);
-        
+
         let mut state = State::new();
         state.set("has_tool", true);
-        
+
         assert!(action.can_perform(&state));
     }
 
@@ -83,10 +83,10 @@ mod tests {
     fn test_can_perform_with_unmatching_preconditions() {
         let mut action = Action::new("test_action", 1.0).unwrap();
         action.preconditions.set("has_tool", true);
-        
+
         let mut state = State::new();
         state.set("has_tool", false);
-        
+
         assert!(!action.can_perform(&state));
     }
 
@@ -94,7 +94,7 @@ mod tests {
     fn test_can_perform_with_missing_preconditions() {
         let mut action = Action::new("test_action", 1.0).unwrap();
         action.preconditions.set("has_tool", true);
-        
+
         let state = State::new();
         assert!(!action.can_perform(&state));
     }
@@ -111,10 +111,10 @@ mod tests {
     fn test_apply_effects_single() {
         let mut action = Action::new("test_action", 1.0).unwrap();
         action.effects.set("has_result", true);
-        
+
         let mut state = State::new();
         action.apply_effects(&mut state);
-        
+
         assert_eq!(state.get("has_result"), Some(true));
     }
 
@@ -123,10 +123,10 @@ mod tests {
         let mut action = Action::new("test_action", 1.0).unwrap();
         action.effects.set("has_result", true);
         action.effects.set("is_complete", true);
-        
+
         let mut state = State::new();
         action.apply_effects(&mut state);
-        
+
         assert_eq!(state.get("has_result"), Some(true));
         assert_eq!(state.get("is_complete"), Some(true));
     }
@@ -135,11 +135,11 @@ mod tests {
     fn test_apply_effects_overwrite() {
         let mut action = Action::new("test_action", 1.0).unwrap();
         action.effects.set("has_result", true);
-        
+
         let mut state = State::new();
         state.set("has_result", false);
         action.apply_effects(&mut state);
-        
+
         assert_eq!(state.get("has_result"), Some(true));
     }
-} 
+}

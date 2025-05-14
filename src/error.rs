@@ -24,7 +24,10 @@ mod tests {
     #[test]
     fn test_no_plan_found_display() {
         let err = GoapError::NoPlanFound;
-        assert_eq!(format!("{}", err), "No valid plan found to achieve the goal");
+        assert_eq!(
+            format!("{}", err),
+            "No valid plan found to achieve the goal"
+        );
     }
 
     #[test]
@@ -50,4 +53,4 @@ mod tests {
         let err = GoapError::NoPlanFound;
         let _ = err.source(); // Should be None
     }
-} 
+}

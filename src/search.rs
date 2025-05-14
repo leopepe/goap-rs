@@ -1,6 +1,6 @@
-use std::collections::{HashSet, BinaryHeap};
+use crate::{Action, GoapError, Result, State};
 use std::cmp::Ordering;
-use crate::{Action, State, Result, GoapError};
+use std::collections::{BinaryHeap, HashSet};
 
 /// Trait defining the interface for search algorithms
 pub trait SearchAlgorithm {
@@ -25,7 +25,7 @@ impl SearchAlgorithm for AStarSearch {
         let mut open_set = BinaryHeap::new();
         let mut closed_set = HashSet::new();
         let mut nodes = Vec::new();
-        
+
         // Add the initial node
         let initial_node = Node {
             state: current_state.clone(),
@@ -34,13 +34,13 @@ impl SearchAlgorithm for AStarSearch {
             g_cost: 0.0,
             h_cost: heuristic(current_state, goal_state),
         };
-        
+
         nodes.push(initial_node);
         open_set.push(0);
 
         while let Some(node_idx) = open_set.pop() {
             let node = nodes[node_idx].clone();
-            
+
             if node.state.satisfies(goal_state) {
                 return Ok(reconstruct_path(&nodes, node_idx));
             }
@@ -100,7 +100,7 @@ impl SearchAlgorithm for DijkstraSearch {
         let mut open_set = BinaryHeap::new();
         let mut closed_set = HashSet::new();
         let mut nodes = Vec::new();
-        
+
         // Add the initial node
         let initial_node = Node {
             state: current_state.clone(),
@@ -109,13 +109,13 @@ impl SearchAlgorithm for DijkstraSearch {
             g_cost: 0.0,
             h_cost: 0.0, // Dijkstra doesn't use heuristic
         };
-        
+
         nodes.push(initial_node);
         open_set.push(0);
 
         while let Some(node_idx) = open_set.pop() {
             let node = nodes[node_idx].clone();
-            
+
             if node.state.satisfies(goal_state) {
                 return Ok(reconstruct_path(&nodes, node_idx));
             }
@@ -212,19 +212,19 @@ fn heuristic(state: &State, goal: &State) -> f32 {
 
 fn reconstruct_path(nodes: &[Node], mut current_idx: usize) -> Vec<Action> {
     let mut path = Vec::new();
-    
+
     while let Some(node) = nodes.get(current_idx) {
         if let Some(action) = &node.action {
             path.push(action.clone());
         }
-        
+
         if let Some(parent_idx) = node.parent {
             current_idx = parent_idx;
         } else {
             break;
         }
     }
-    
+
     path.reverse();
     path
 }
@@ -234,10 +234,19 @@ mod tests {
     use super::*;
     use crate::{Action, State};
 
-    fn make_action(name: &str, cost: f32, pre: Vec<(&str, bool)>, eff: Vec<(&str, bool)>) -> Action {
+    fn make_action(
+        name: &str,
+        cost: f32,
+        pre: Vec<(&str, bool)>,
+        eff: Vec<(&str, bool)>,
+    ) -> Action {
         let mut action = Action::new(name, cost).unwrap();
-        for (k, v) in pre { action.preconditions.set(k, v); }
-        for (k, v) in eff { action.effects.set(k, v); }
+        for (k, v) in pre {
+            action.preconditions.set(k, v);
+        }
+        for (k, v) in eff {
+            action.effects.set(k, v);
+        }
         action
     }
 
@@ -246,7 +255,7 @@ mod tests {
         let a = make_action("a", 1.0, vec![("start", true)], vec![("goal", true)]);
         let b = make_action("b", 5.0, vec![("start", true)], vec![("goal", true)]);
         let actions = vec![a.clone(), b.clone()];
-        
+
         let mut initial = State::new();
         initial.set("start", true);
         let mut goal = State::new();
@@ -262,7 +271,7 @@ mod tests {
         let a = make_action("a", 1.0, vec![("start", true)], vec![("goal", true)]);
         let b = make_action("b", 5.0, vec![("start", true)], vec![("goal", true)]);
         let actions = vec![a.clone(), b.clone()];
-        
+
         let mut initial = State::new();
         initial.set("start", true);
         let mut goal = State::new();
@@ -272,4 +281,4 @@ mod tests {
         let plan = dijkstra.search(&actions, &initial, &goal).unwrap();
         assert_eq!(plan[0].name, "a");
     }
-} 
+}

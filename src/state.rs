@@ -30,9 +30,10 @@ impl State {
 
     /// Check if this state satisfies another state's requirements
     pub fn satisfies(&self, other: &State) -> bool {
-        other.values.iter().all(|(key, &value)| {
-            self.values.get(key).map_or(false, |&v| v == value)
-        })
+        other
+            .values
+            .iter()
+            .all(|(key, &value)| self.values.get(key).map_or(false, |&v| v == value))
     }
 
     /// Apply the effects of an action to this state
@@ -112,4 +113,4 @@ mod tests {
         let state: State = Default::default();
         assert!(state.values().is_empty());
     }
-} 
+}

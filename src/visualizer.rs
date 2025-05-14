@@ -1,6 +1,6 @@
+use crate::{Action, Result, State};
 use std::fs::File;
 use std::io::Write;
-use crate::{Action, State, Result};
 
 /// A visualizer for GOAP plans that generates Graphviz DOT files
 pub struct GoapVisualizer;
@@ -21,24 +21,35 @@ impl GoapVisualizer {
         filename: &str,
     ) -> Result<()> {
         let mut file = File::create(filename)?;
-        
+
         // Write DOT file header
         writeln!(file, "digraph GOAP {{")?;
         writeln!(file, "    rankdir=LR;")?;
-        writeln!(file, "    node [shape=box, style=filled, fillcolor=lightblue];")?;
+        writeln!(
+            file,
+            "    node [shape=box, style=filled, fillcolor=lightblue];"
+        )?;
         writeln!(file, "    edge [fontsize=10];")?;
-        
+
         // Write initial state
-        writeln!(file, "    initial [label=\"Initial State\\n{}\", fillcolor=lightgreen];", 
-            Self::state_to_string(current_state))?;
-        
+        writeln!(
+            file,
+            "    initial [label=\"Initial State\\n{}\", fillcolor=lightgreen];",
+            Self::state_to_string(current_state)
+        )?;
+
         // Write goal state
-        writeln!(file, "    goal [label=\"Goal State\\n{}\", fillcolor=lightpink];", 
-            Self::state_to_string(goal_state))?;
-        
+        writeln!(
+            file,
+            "    goal [label=\"Goal State\\n{}\", fillcolor=lightpink];",
+            Self::state_to_string(goal_state)
+        )?;
+
         // Write all available actions
         for (i, action) in actions.iter().enumerate() {
-            writeln!(file, "    action_{} [label=\"{}\\nCost: {}\\nPre: {}\\nEff: {}\"];",
+            writeln!(
+                file,
+                "    action_{} [label=\"{}\\nCost: {}\\nPre: {}\\nEff: {}\"];",
                 i,
                 action.name,
                 action.cost,
@@ -46,14 +57,14 @@ impl GoapVisualizer {
                 Self::state_to_string(&action.effects)
             )?;
         }
-        
+
         // Write edges from initial state to possible actions
         for (i, action) in actions.iter().enumerate() {
             if action.can_perform(current_state) {
                 writeln!(file, "    initial -> action_{} [label=\"possible\"];", i)?;
             }
         }
-        
+
         // Write edges from actions to goal state
         for (i, action) in actions.iter().enumerate() {
             let mut new_state = current_state.clone();
@@ -70,16 +81,17 @@ impl GoapVisualizer {
                 writeln!(file, "    action_{} [fillcolor=lightcoral];", idx)?;
             }
         }
-        
+
         // Write closing brace
         writeln!(file, "}}")?;
-        
+
         Ok(())
     }
 
     /// Helper method to convert a state to a string representation
     fn state_to_string(state: &State) -> String {
-        state.values()
+        state
+            .values()
             .iter()
             .map(|(key, value)| format!("{}: {}", key, value))
             .collect::<Vec<_>>()
@@ -111,7 +123,15 @@ mod tests {
 
         // Create visualizer and generate DOT file
         let visualizer = GoapVisualizer::new();
-        visualizer.visualize_plan(&actions, &current_state, &goal_state, &plan, "test_plan.dot").unwrap();
+        visualizer
+            .visualize_plan(
+                &actions,
+                &current_state,
+                &goal_state,
+                &plan,
+                "test_plan.dot",
+            )
+            .unwrap();
 
         // Verify file was created and contains expected content
         let content = std::fs::read_to_string("test_plan.dot").unwrap();
@@ -123,4 +143,4 @@ mod tests {
         // Clean up
         std::fs::remove_file("test_plan.dot").unwrap();
     }
-} 
+}

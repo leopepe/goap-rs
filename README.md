@@ -37,7 +37,7 @@ fn main() -> Result<()> {
     build_house.effects.set("has_house", true);
 
     // Create the planner with available actions (Default A* search)
-    // For Dijkstra search algorithm use
+    // For Dijkstra search algorithm use:
     // let planner = Planner::with_search_algorithm(actions, Box::new(DijkstraSearch));
     let planner = Planner::new(vec![gather_wood, build_house]);
 
@@ -83,5 +83,4 @@ The planner will find the most efficient path from the current state to the goal
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
+This project is licensed under the BSD 3-Clause License - see the LICENSE file for details.

@@ -43,7 +43,7 @@ use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
 
-use crate::error::{Error, Result};
+use crate::error::{GoapError, Result};
 
 /// Represents the response from a sensor execution.
 ///
@@ -322,7 +322,7 @@ impl Sensor {
         let mut resp_lock = self
             .response
             .lock()
-            .map_err(|_| Error::Other("Lock poisoned".into()))?;
+            .map_err(|_| GoapError::Other("Lock poisoned".into()))?;
         *resp_lock = Some(response.clone());
 
         // Return a clone of the response
@@ -345,7 +345,7 @@ impl Sensor {
         let resp_lock = self
             .response
             .lock()
-            .map_err(|_| Error::Other("Lock poisoned".into()))?;
+            .map_err(|_| GoapError::Other("Lock poisoned".into()))?;
         Ok(resp_lock.clone())
     }
 }
@@ -477,7 +477,7 @@ impl Sensors {
 
         // Check if a sensor with this name already exists
         if self.get(&name_str).is_some() {
-            return Err(Error::SensorAlreadyInCollection(name_str));
+            return Err(GoapError::SensorAlreadyInCollection(name_str));
         }
 
         // Add the new sensor

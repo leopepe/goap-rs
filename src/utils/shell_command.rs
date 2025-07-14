@@ -1,29 +1,10 @@
+use crate::error::{GoapError, Result};
 use std::process::{Command, Output, Stdio};
 use tokio::process::Command as AsyncCommand;
 
 use crate::error::{GoapError, Result};
 
 /// A utility for executing shell commands
-///
-/// The `ShellCommand` struct provides a convenient way to execute shell commands
-/// both synchronously and asynchronously.
-///
-/// # Examples
-///
-/// ```
-/// use goaprs::utils::shell_command::ShellCommand;
-///
-/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-/// // Create a new shell command
-/// let mut cmd = ShellCommand::new("echo 'Hello World'", 5);
-///
-/// // Run synchronously
-/// let (stdout, stderr, status) = cmd.run()?;
-/// assert_eq!(stdout.trim(), "Hello World");
-/// assert_eq!(status, 0);
-/// # Ok(())
-/// # }
-/// ```
 pub struct ShellCommand {
     /// The command to execute
     command: String,
@@ -35,19 +16,6 @@ pub struct ShellCommand {
 
 impl ShellCommand {
     /// Create a new shell command
-    ///
-    /// # Arguments
-    ///
-    /// * `command` - The command to execute
-    /// * `timeout` - The timeout in seconds
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use goaprs::utils::shell_command::ShellCommand;
-    ///
-    /// let cmd = ShellCommand::new("ls -la", 10);
-    /// ```
     pub fn new(command: impl Into<String>, timeout: u64) -> Self {
         Self {
             command: command.into(),
@@ -86,34 +54,6 @@ impl ShellCommand {
     }
 
     /// Execute a specific command synchronously
-    ///
-    /// This method allows executing a different command than the one
-    /// originally provided to the ShellCommand.
-    ///
-    /// # Arguments
-    ///
-    /// * `command` - The command to execute
-    ///
-    /// # Returns
-    ///
-    /// A tuple containing (stdout, stderr, exit_status)
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the command fails to execute
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// use goaprs::utils::shell_command::ShellCommand;
-    ///
-    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// let mut cmd = ShellCommand::new("echo 'original'", 5);
-    /// let (stdout, _, _) = cmd.run_command("echo 'override'")?;
-    /// assert_eq!(stdout.trim(), "override");
-    /// # Ok(())
-    /// # }
-    /// ```
     pub fn run_command(&mut self, command: &str) -> Result<(String, String, i32)> {
         let output = Command::new("sh")
             .arg("-c")
@@ -131,63 +71,12 @@ impl ShellCommand {
     }
 
     /// Execute the command asynchronously
-    ///
-    /// # Returns
-    ///
-    /// A tuple containing (stdout, stderr, exit_status)
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the command fails to execute
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// use goaprs::utils::shell_command::ShellCommand;
-    ///
-    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    /// let mut cmd = ShellCommand::new("echo 'async test'", 5);
-    /// let (stdout, stderr, status) = cmd.run_async().await?;
-    /// assert_eq!(stdout.trim(), "async test");
-    /// assert!(stderr.is_empty());
-    /// assert_eq!(status, 0);
-    /// # Ok(())
-    /// # }
-    /// ```
     pub async fn run_async(&mut self) -> Result<(String, String, i32)> {
         let command = self.command.clone();
         self.run_command_async(&command).await
     }
 
     /// Execute a specific command asynchronously
-    ///
-    /// This method allows executing a different command than the one
-    /// originally provided to the ShellCommand.
-    ///
-    /// # Arguments
-    ///
-    /// * `command` - The command to execute
-    ///
-    /// # Returns
-    ///
-    /// A tuple containing (stdout, stderr, exit_status)
-    ///
-    /// # Errors
-    ///
-    /// Returns an error if the command fails to execute
-    ///
-    /// # Examples
-    ///
-    /// ```no_run
-    /// use goaprs::utils::shell_command::ShellCommand;
-    ///
-    /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-    /// let mut cmd = ShellCommand::new("echo 'original'", 5);
-    /// let (stdout, _, _) = cmd.run_command_async("echo 'async override'").await?;
-    /// assert_eq!(stdout.trim(), "async override");
-    /// # Ok(())
-    /// # }
-    /// ```
     pub async fn run_command_async(&mut self, command: &str) -> Result<(String, String, i32)> {
         let output = AsyncCommand::new("sh")
             .arg("-c")
@@ -206,28 +95,6 @@ impl ShellCommand {
     }
 
     /// Get the last response
-    ///
-    /// Returns the output from the last executed command, if any.
-    ///
-    /// # Returns
-    ///
-    /// An optional reference to a tuple containing (stdout, stderr, exit_status)
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use goaprs::utils::shell_command::ShellCommand;
-    ///
-    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
-    /// let mut cmd = ShellCommand::new("echo 'test response'", 5);
-    /// cmd.run()?;
-    ///
-    /// if let Some((stdout, _, _)) = cmd.response() {
-    ///     assert_eq!(stdout.trim(), "test response");
-    /// }
-    /// # Ok(())
-    /// # }
-    /// ```
     pub fn response(&self) -> Option<&(String, String, i32)> {
         self.response.as_ref()
     }
@@ -262,34 +129,6 @@ impl std::fmt::Debug for ShellCommand {
 }
 
 /// Helper function for creating and executing a shell command in one step
-///
-/// This is a convenience function that creates a new `ShellCommand` and immediately
-/// executes it asynchronously.
-///
-/// # Arguments
-///
-/// * `command` - The command to execute
-/// * `timeout` - The timeout in seconds
-///
-/// # Returns
-///
-/// A tuple containing (stdout, stderr, exit_status)
-///
-/// # Errors
-///
-/// Returns an error if the command fails to execute
-///
-/// # Examples
-///
-/// ```
-/// use goaprs::utils::shell_command::exec_shell_command;
-///
-/// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
-/// let (stdout, stderr, status) = exec_shell_command("echo 'one step'", 5).await?;
-/// assert_eq!(stdout.trim(), "one step");
-/// # Ok(())
-/// # }
-/// ```
 pub async fn exec_shell_command(
     command: impl Into<String>,
     timeout: u64,

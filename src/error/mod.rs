@@ -22,9 +22,26 @@ use thiserror::Error;
 /// ```
 #[derive(Error, Debug)]
 pub enum GoapError {
-    /// A general operation failure with a message describing what went wrong
+    // General operation errors
     #[error("Operation failed: {0}")]
     OperationFailed(String),
+
+    // Plan errors
+    #[error("Plan error: {0}")]
+    Plan(String),
+
+    #[error("Failed to produce a plan")]
+    PlanFailed,
+
+    #[error("No valid plan found to achieve the goal")]
+    NoPlanFound,
+
+    #[error("No plan has been generated yet")]
+    NoPlanGenerated,
+
+    // State errors
+    #[error("Invalid state transition: {0}")]
+    InvalidStateTransition(String),
 
     // Sensor errors
     /// A general sensor-related error with a message describing what went wrong
@@ -82,6 +99,11 @@ pub enum GoapError {
     /// Error when executing a shell command fails
     #[error("Command execution failed: {0}")]
     CommandExecution(String),
+    #[error("Action precondition not met: {0}")]
+    PreconditionNotMet(String),
+
+    #[error("Action cost must be positive")]
+    InvalidActionCost,
 
     // Graph errors
     /// A general graph-related error with a message describing what went wrong
@@ -91,6 +113,14 @@ pub enum GoapError {
     /// Error when path-finding algorithms cannot find a path in the graph
     #[error("No path found in graph")]
     NoPathFound,
+
+    // IO errors
+    #[error("IO error: {0}")]
+    Io(#[from] std::io::Error),
+
+    // Command execution errors
+    #[error("Command execution failed: {0}")]
+    CommandExecution(String),
 
     // Serialization errors
     /// A wrapper around serde_json serialization/deserialization errors
@@ -139,6 +169,9 @@ pub enum GoapError {
 /// // Error case
 /// assert!(might_fail(false).is_err());
 /// ```
+}
+
+/// Result type for GOAP operations
 pub type Result<T> = std::result::Result<T, GoapError>;
 
 #[cfg(test)]

@@ -1,4 +1,4 @@
-# GOAP-RS
+# GOAPRS
 
 A Goal-Oriented Action Planning (GOAP) implementation in Rust. This library provides a flexible and efficient way to implement autonomous agents that can plan sequences of actions to achieve specific goals.
 
@@ -16,7 +16,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-goap-rs = "0.1.0"
+goaprs = "0.2.0"
 ```
 
 ### Example

@@ -1,25 +1,101 @@
 use crate::search::{AStarSearch, SearchAlgorithm};
 use crate::{Action, Result, State};
 
-/// The GOAP planner that finds the optimal sequence of actions
+/// The GOAP planner that finds the optimal sequence of actions to achieve a goal state.
+///
+/// The planner takes a set of available actions and uses a search algorithm
+/// (by default A*) to find the most efficient sequence of actions that will
+/// transform the current state into the goal state.
+
+///
+/// # Examples
+///
+/// ```
+/// use goaprs::{Action, Planner, State};
+///
+/// // Create available actions
+/// let mut goto_store = Action::new("go_to_store", 1.0).unwrap();
+/// goto_store.preconditions.set("at_home", true);
+/// goto_store.effects.set("at_store", true);
+/// goto_store.effects.set("at_home", false);
+///
+/// let mut buy_food = Action::new("buy_food", 2.0).unwrap();
+/// buy_food.preconditions.set("at_store", true);
+/// buy_food.preconditions.set("has_money", true);
+/// buy_food.effects.set("has_food", true);
+///
+/// // Create a planner with these actions
+/// let planner = Planner::new(vec![goto_store, buy_food]);
+///
+/// // Define current state
+/// let mut current_state = State::new();
+/// current_state.set("at_home", true);
+/// current_state.set("has_money", true);
+///
+/// // Define goal state
+/// let mut goal_state = State::new();
+/// goal_state.set("has_food", true);
+///
+/// // Find plan to achieve goal
+/// let plan = planner.plan(&current_state, &goal_state).unwrap();
+///
+/// // The plan should include both actions in the correct order
+/// assert_eq!(plan.len(), 2);
+/// assert_eq!(plan[0].name, "go_to_store");
+/// assert_eq!(plan[1].name, "buy_food");
+/// ```
 pub struct Planner {
+    /// Available actions that can be used in planning
     actions: Vec<Action>,
+    /// The algorithm used to search for an optimal plan
     search_algorithm: Box<dyn SearchAlgorithm>,
 }
 
 impl Planner {
-    /// Create a new planner with the given actions using A* search
+    /// Creates a new planner with the given actions using A* search
+    ///
+    /// # Arguments
+    ///
+    /// * `actions` - A vector of available actions to use for planning
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use goaprs::{Action, Planner};
+    ///
+    /// let mut move_action = Action::new("move", 1.0).unwrap();
+    /// move_action.preconditions.set("can_move", true);
+    /// move_action.effects.set("at_destination", true);
+    ///
+    /// let planner = Planner::new(vec![move_action]);
+    /// ```
     pub fn new(actions: Vec<Action>) -> Self {
         Self {
             actions,
-            search_algorithm: Box::new(AStarSearch),
+            search_algorithm: Box::new(AStarSearch::default()),
         }
     }
 
-    /// Create a new planner with the given actions and search algorithm
+    /// Creates a new planner with the given actions and a custom search algorithm
+    ///
+    /// This allows you to use a different search algorithm than the default A* search.
+    ///
+    /// # Arguments
+    ///
+    /// * `actions` - A vector of available actions to use for planning
+    /// * `search_algorithm` - The search algorithm to use for finding plans
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use goaprs::{Action, DijkstraSearch, Planner};
+    ///
+    /// let actions = vec![Action::new("sample_action", 1.0).unwrap()];
+    /// let planner = Planner::with_search_algorithm(actions, Box::new(DijkstraSearch));
+    /// ```
     pub fn with_search_algorithm(
         actions: Vec<Action>,
-        search_algorithm: Box<dyn SearchAlgorithm>,
+        search_algorithm: Box<dyn SearchAlgorithm + Send + Sync>,
     ) -> Self {
         Self {
             actions,
@@ -27,10 +103,56 @@ impl Planner {
         }
     }
 
-    /// Find a plan to achieve the goal state from the current state
+    /// Finds a plan to achieve the goal state from the current state
+    ///
+    /// This method uses the planner's search algorithm to find the most efficient
+    /// sequence of actions that will transform the current state into the goal state.
+    ///
+    /// # Arguments
+    ///
+    /// * `current_state` - The starting state
+    /// * `goal_state` - The target state to achieve
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(Vec<Action>)` - A sequence of actions that achieves the goal
+    /// * `Err(GoapError)` - If no valid plan can be found
+    ///
+    /// # Errors
+    ///
+    /// Returns `GoapError::NoPlanFound` if no valid plan can be found to achieve the goal.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use goaprs::{Action, Planner, State};
+    ///
+    /// // Create action and planner
+    /// let mut action = Action::new("take_action", 1.0).unwrap();
+    /// action.effects.set("goal_achieved", true);
+    /// let planner = Planner::new(vec![action]);
+    ///
+    /// // Define states
+    /// let current_state = State::new();
+    /// let mut goal_state = State::new();
+    /// goal_state.set("goal_achieved", true);
+    ///
+    /// // Find plan
+    /// let plan = planner.plan(&current_state, &goal_state).unwrap();
+    /// assert_eq!(plan.len(), 1);
+    /// ```
     pub fn plan(&self, current_state: &State, goal_state: &State) -> Result<Vec<Action>> {
         self.search_algorithm
             .search(&self.actions, current_state, goal_state)
+    }
+}
+
+impl Clone for Planner {
+    fn clone(&self) -> Self {
+        // Since we can't clone the boxed trait object directly,
+        // we create a new planner with the same actions and a new
+        // default search algorithm (AStarSearch)
+        Self::new(self.actions.clone())
     }
 }
 
@@ -117,12 +239,14 @@ mod tests {
         goal.set("goal", true);
 
         // Test A* search
-        let astar_planner = Planner::with_search_algorithm(actions.clone(), Box::new(AStarSearch));
+        let astar_planner =
+            Planner::with_search_algorithm(actions.clone(), Box::new(AStarSearch::default()));
         let astar_plan = astar_planner.plan(&initial, &goal).unwrap();
         assert_eq!(astar_plan[0].name, "a");
 
         // Test Dijkstra search
-        let dijkstra_planner = Planner::with_search_algorithm(actions, Box::new(DijkstraSearch));
+        let dijkstra_planner =
+            Planner::with_search_algorithm(actions, Box::new(DijkstraSearch::default()));
         let dijkstra_plan = dijkstra_planner.plan(&initial, &goal).unwrap();
         assert_eq!(dijkstra_plan[0].name, "a");
     }

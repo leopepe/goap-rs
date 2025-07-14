@@ -1,4 +1,4 @@
-use goap_rs::{Action, GoapError, GoapVisualizer, Planner, State};
+use goaprs::{Action, GoapError, GoapVisualizer, Planner, State};
 
 #[cfg(test)]
 mod tests {

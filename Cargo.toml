@@ -1,15 +1,30 @@
 [package]
-name = "goap-rs"
-version = "0.1.0"
+name = "goaprs"
+version = "0.2.0"
 edition = "2021"
-description = "A Goal-Oriented Action Planning (GOAP) implementation in Rust"
+authors = ["GOAP Rust Team"]
+description = "Goal Oriented Action Planning implementation in Rust"
 license = "MIT"
-repository = "https://github.com/yourusername/goap-rs"
-readme = "README.md"
 
 [dependencies]
-thiserror = "1.0"
-log = "0.4"
+petgraph = "0.6.3"                                     # Graph data structure and algorithms
+thiserror = "1.0.40"                                   # Error handling
+futures = "0.3.28"                                     # Async primitives
+async-trait = "0.1.68"                                 # Async traits
+tokio = { version = "1.28.2", features = ["full"] }    # Async runtime
+serde = { version = "1.0.163", features = ["derive"] } # Serialization
+serde_json = "1.0.96"                                  # JSON serialization
+log = "0.4.17"                                         # Logging
+env_logger = "0.10.0"                                  # Logging implementation
+strum = { version = "0.24.1", features = ["derive"] }  # Enum utilities
+strum_macros = "0.24.3"                                # Enum macros
+enum_dispatch = "0.3.11"                               # Dynamic dispatch for enums
+actix = "0.13.0"                                       # Actix actor framework
+tempfile = "3.8.0"                                     # Temporary file creation
 
 [dev-dependencies]
-flamegraph = "0.6.8"
+criterion = "0.5.1" # Benchmarking
+mockall = "0.11.4"  # Mocking
+
+[profile.release]
+debug = true

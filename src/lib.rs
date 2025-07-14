@@ -1,13 +1,21 @@
-mod action;
-mod error;
-mod planner;
-mod search;
-mod state;
-mod visualizer;
+pub mod action;
+pub mod error;
+pub mod planner;
+pub mod search;
+pub mod sensor;
+pub mod state;
+pub mod utils;
+pub mod visualizer;
+pub mod world_state;
 
 pub use action::Action;
 pub use error::{GoapError, Result};
 pub use planner::Planner;
 pub use search::{AStarSearch, DijkstraSearch, SearchAlgorithm};
+pub use sensor::Sensor;
 pub use state::State;
+pub use utils::actor::ActorAutomatonController;
+pub use utils::automaton::Automaton;
+pub use utils::automaton::AutomatonController;
 pub use visualizer::GoapVisualizer;
+pub use world_state::WorldState;

@@ -19,5 +19,9 @@ flamegraph:
 release: test
 	cargo build --release
 
+.PHONY: docs
+docs: test
+	cargo doc --color always --no-deps
+
 clean:
 	cargo clean

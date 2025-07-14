@@ -1,4 +1,4 @@
-use goap_rs::{Action, GoapVisualizer, Planner, Result, State};
+use goaprs::{Action, GoapVisualizer, Planner, Result, State};
 fn main() -> Result<()> {
     // Create a complex set of actions with multiple preconditions and effects
     let mut actions = Vec::new();

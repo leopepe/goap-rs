@@ -1,9 +1,34 @@
 use std::collections::HashMap;
 
-/// Represents the state of the world in the GOAP system
+/// Represents the state of the world in the Goal-Oriented Action Planning (GOAP) system.
+///
+/// A `State` is a collection of key-value pairs where:
+/// - Keys are strings representing state variables
+/// - Values are booleans representing whether conditions are true or false
+///
+/// States are used to represent the current world state, action preconditions,
+/// action effects, and goal states in the GOAP system.
+///
+/// # Examples
+///
+/// ```
+/// use goaprs::State;
+///
+/// // Create a new state
+/// let mut state = State::new();
+///
+/// // Set state variables
+/// state.set("player_has_key", true);
+/// state.set("door_is_open", false);
+///
+/// // Check state variables
+/// assert_eq!(state.get("player_has_key"), Some(true));
+/// assert_eq!(state.get("door_is_open"), Some(false));
+/// assert_eq!(state.get("non_existent_variable"), None);
+/// ```
 #[derive(Debug, Clone, PartialEq)]
 pub struct State {
-    /// The state values
+    /// The state values as key-value pairs
     #[cfg(not(test))]
     values: HashMap<String, bool>,
     #[cfg(test)]
@@ -11,7 +36,16 @@ pub struct State {
 }
 
 impl State {
-    /// Create a new empty state
+    /// Creates a new empty state.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use goaprs::State;
+    ///
+    /// let state = State::new();
+    /// assert!(state.values().is_empty());
+    /// ```
     pub fn new() -> Self {
         Self {
             values: HashMap::new(),
@@ -36,19 +70,79 @@ impl State {
             .all(|(key, &value)| self.values.get(key).map_or(false, |&v| v == value))
     }
 
-    /// Apply the effects of an action to this state
-    pub fn apply_effects(&mut self, effects: &State) {
+    /// Applies the effects of another state to this state.
+    ///
+    /// This method updates the current state by copying all key-value pairs
+    /// from the effects state, potentially overwriting existing values.
+    ///
+    /// # Arguments
+    ///
+    /// * `effects` - The state containing effects to apply
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use goaprs::State;
+    ///
+    /// // Create an initial state
+    /// let mut state = State::new();
+    /// state.set("has_key", false);
+    /// state.set("door_open", false);
+    ///
+    /// // Create effects to apply
+    /// let mut effects = State::new();
+    /// effects.set("has_key", true);  // This will change
+    /// effects.set("inventory_full", true);  // This will be added
+    ///
+    /// // Apply the effects
+    /// state.apply_effects(&effects);
+    ///
+    /// // Verify changes
+    /// assert_eq!(state.get("has_key"), Some(true));  // Changed
+    /// assert_eq!(state.get("door_open"), Some(false));  // Unchanged
+    /// assert_eq!(state.get("inventory_full"), Some(true));  // Added
+    /// ```
+    pub fn apply_effects(&mut self, effects: &Self) {
         for (key, &value) in effects.values.iter() {
-            self.values.insert(key.clone(), value);
+            self.set(key, value);
         }
     }
 
-    /// Crate-public getter for values (for planner/tests)
-    pub(crate) fn values(&self) -> &HashMap<String, bool> {
+    /// Gets all the key-value pairs in the state.
+    ///
+    /// # Returns
+    ///
+    /// A reference to the internal HashMap containing all state variables.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use goaprs::State;
+    ///
+    /// let mut state = State::new();
+    /// state.set("position_x", true);
+    /// state.set("position_y", false);
+    ///
+    /// let values = state.values();
+    /// assert_eq!(values.len(), 2);
+    /// assert!(values.contains_key("position_x"));
+    /// assert!(values.contains_key("position_y"));
+    /// ```
+    pub fn values(&self) -> &HashMap<String, bool> {
         &self.values
     }
 }
 
+/// Default implementation creates an empty state
+///
+/// # Examples
+///
+/// ```
+/// use goaprs::State;
+///
+/// let state = State::default();
+/// assert!(state.values().is_empty());
+/// ```
 impl Default for State {
     fn default() -> Self {
         Self::new()

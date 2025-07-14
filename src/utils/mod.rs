@@ -6,4 +6,5 @@ pub mod shell_command;
 
 pub use actor::ActorAutomatonController;
 pub use automaton::Automaton;
+pub use automaton::AutomatonController;
 pub use shell_command::ShellCommand;

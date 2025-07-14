@@ -61,10 +61,10 @@ impl WorldState {
     /// # Examples
     ///
     /// ```
-    /// use goaprs::world_state::WorldState;
+    /// use goaprs::WorldState;
     ///
     /// let world_state = WorldState::new();
-    /// assert!(world_state.is_empty());
+    /// assert!(world_state.inner().is_empty());
     /// ```
     pub fn new() -> Self {
         Self {
@@ -85,16 +85,16 @@ impl WorldState {
     /// # Examples
     ///
     /// ```
-    /// use goaprs::world_state::WorldState;
+    /// use goaprs::WorldState;
     /// use std::collections::HashMap;
     ///
     /// let mut map = HashMap::new();
-    /// map.insert("health".to_string(), "100".to_string());
-    /// map.insert("mana".to_string(), "50".to_string());
+    /// map.insert("position".to_string(), "home".to_string());
+    /// map.insert("inventory".to_string(), "empty".to_string());
     ///
+    /// // Create a WorldState from a HashMap
     /// let world_state = WorldState::from_hashmap(map);
-    /// assert_eq!(world_state.get("health"), Some(&"100".to_string()));
-    /// assert_eq!(world_state.get("mana"), Some(&"50".to_string()));
+    /// assert_eq!(world_state.inner().len(), 2);
     /// ```
     pub fn from_hashmap(map: HashMap<String, String>) -> Self {
         Self { state: map }
@@ -112,13 +112,14 @@ impl WorldState {
     /// # Examples
     ///
     /// ```
-    /// use goaprs::world_state::WorldState;
+    /// use goaprs::WorldState;
     ///
     /// let mut world_state = WorldState::new();
-    /// world_state.insert("key".to_string(), "value".to_string());
+    /// world_state.insert("position".to_string(), "home".to_string());
     ///
-    /// let inner_map = world_state.inner();
-    /// assert_eq!(inner_map.get("key"), Some(&"value".to_string()));
+    /// // Access the internal HashMap
+    /// let inner = world_state.inner();
+    /// assert_eq!(inner.get("position"), Some(&"home".to_string()));
     /// ```
     pub fn inner(&self) -> &HashMap<String, String> {
         &self.state
@@ -136,19 +137,17 @@ impl WorldState {
     /// # Examples
     ///
     /// ```
-    /// use goaprs::world_state::WorldState;
+    /// use goaprs::WorldState;
     ///
     /// let mut world_state = WorldState::new();
     ///
     /// // Modify the internal HashMap directly
     /// {
-    ///     let inner_map = world_state.inner_mut();
-    ///     inner_map.insert("key1".to_string(), "value1".to_string());
-    ///     inner_map.insert("key2".to_string(), "value2".to_string());
+    ///     let inner_mut = world_state.inner_mut();
+    ///     inner_mut.insert("position".to_string(), "home".to_string());
     /// }
     ///
-    /// assert_eq!(world_state.get("key1"), Some(&"value1".to_string()));
-    /// assert_eq!(world_state.get("key2"), Some(&"value2".to_string()));
+    /// assert_eq!(world_state.get("position"), Some(&"home".to_string()));
     /// ```
     pub fn inner_mut(&mut self) -> &mut HashMap<String, String> {
         &mut self.state

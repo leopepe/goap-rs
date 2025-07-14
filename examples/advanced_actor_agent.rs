@@ -5,24 +5,48 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use tokio::time::sleep;
 
-/// A shared state to demonstrate communication between components
+// Shared world state
+#[derive(Debug)]
 struct WorldState {
-    temperature: i32,
     heater_on: bool,
-    target_temperature: i32,
+    temperature_increased: bool,
 }
 
 impl WorldState {
     fn new() -> Self {
         Self {
-            temperature: 18, // Starting room temperature
             heater_on: false,
-            target_temperature: 22, // Target temperature
+            temperature_increased: false,
         }
     }
 }
 
 // Sensors
+#[derive(Debug)]
+struct HeaterSensor {
+    world_state: Arc<Mutex<WorldState>>,
+}
+
+impl HeaterSensor {
+    fn new(world_state: Arc<Mutex<WorldState>>) -> Self {
+        Self { world_state }
+    }
+}
+
+#[async_trait::async_trait]
+impl SensorFn for HeaterSensor {
+    async fn exec(&self, _world_state: &HashMap<String, Fact>) -> Vec<Fact> {
+        let state = self.world_state.lock().unwrap();
+
+        vec![Fact::new(
+            "heater_on",
+            &state.heater_on.to_string(),
+            "HeaterSensor",
+        )]
+    }
+}
+
+#[derive(Debug)]
 struct TemperatureSensor {
     world_state: Arc<Mutex<WorldState>>,
 }
@@ -38,40 +62,10 @@ impl SensorFn for TemperatureSensor {
     async fn exec(&self, _world_state: &HashMap<String, Fact>) -> Vec<Fact> {
         let state = self.world_state.lock().unwrap();
 
-        vec![
-            Fact::new(
-                "temperature",
-                &state.temperature.to_string(),
-                "TemperatureSensor",
-            ),
-            Fact::new(
-                "target_temperature",
-                &state.target_temperature.to_string(),
-                "TemperatureSensor",
-            ),
-        ]
-    }
-}
-
-struct HeaterStateSensor {
-    world_state: Arc<Mutex<WorldState>>,
-}
-
-impl HeaterStateSensor {
-    fn new(world_state: Arc<Mutex<WorldState>>) -> Self {
-        Self { world_state }
-    }
-}
-
-#[async_trait::async_trait]
-impl SensorFn for HeaterStateSensor {
-    async fn exec(&self, _world_state: &HashMap<String, Fact>) -> Vec<Fact> {
-        let state = self.world_state.lock().unwrap();
-
         vec![Fact::new(
-            "heater_on",
-            &state.heater_on.to_string(),
-            "HeaterStateSensor",
+            "temperature_increased",
+            &state.temperature_increased.to_string(),
+            "TemperatureSensor",
         )]
     }
 }
@@ -79,41 +73,19 @@ impl SensorFn for HeaterStateSensor {
 // Actions
 struct TurnHeaterOnAction {
     world_state: Arc<Mutex<WorldState>>,
-    name: String, // Name to identify the action
+    id: &'static str,
 }
 
 impl TurnHeaterOnAction {
     fn new(world_state: Arc<Mutex<WorldState>>) -> Self {
         Self {
             world_state,
-            name: "TurnHeaterOnAction".to_string(),
+            id: "TurnHeaterOnAction",
         }
     }
 
-    fn name(&self) -> &str {
-        &self.name
-    }
-
-    fn target_state(&self) -> HashMap<String, Fact> {
-        let mut facts = HashMap::new();
-        facts.insert(
-            "heater_on".to_string(),
-            Fact::new("heater_on", "true", "TurnHeaterOnAction"),
-        );
-        facts
-    }
-
-    fn preconditions(&self) -> HashMap<String, Fact> {
-        let mut facts = HashMap::new();
-        facts.insert(
-            "heater_on".to_string(),
-            Fact::new("heater_on", "false", "TurnHeaterOnAction"),
-        );
-        facts
-    }
-
-    fn cost(&self) -> f32 {
-        1.0
+    fn id(&self) -> &str {
+        self.id
     }
 }
 
@@ -123,50 +95,25 @@ impl ActionFn for TurnHeaterOnAction {
         println!("Executing: Turn heater ON");
         let mut state = self.world_state.lock().unwrap();
         state.heater_on = true;
-        // Simulate the heater warming the room
-        state.temperature += 1;
-
         true
     }
 }
 
 struct TurnHeaterOffAction {
     world_state: Arc<Mutex<WorldState>>,
-    name: String, // Name to identify the action
+    id: &'static str,
 }
 
 impl TurnHeaterOffAction {
     fn new(world_state: Arc<Mutex<WorldState>>) -> Self {
         Self {
             world_state,
-            name: "TurnHeaterOffAction".to_string(),
+            id: "TurnHeaterOffAction",
         }
     }
 
-    fn name(&self) -> &str {
-        &self.name
-    }
-
-    fn target_state(&self) -> HashMap<String, Fact> {
-        let mut facts = HashMap::new();
-        facts.insert(
-            "heater_on".to_string(),
-            Fact::new("heater_on", "false", "TurnHeaterOffAction"),
-        );
-        facts
-    }
-
-    fn preconditions(&self) -> HashMap<String, Fact> {
-        let mut facts = HashMap::new();
-        facts.insert(
-            "heater_on".to_string(),
-            Fact::new("heater_on", "true", "TurnHeaterOffAction"),
-        );
-        facts
-    }
-
-    fn cost(&self) -> f32 {
-        0.5
+    fn id(&self) -> &str {
+        self.id
     }
 }
 
@@ -176,47 +123,27 @@ impl ActionFn for TurnHeaterOffAction {
         println!("Executing: Turn heater OFF");
         let mut state = self.world_state.lock().unwrap();
         state.heater_on = false;
+        // When we turn off the heater, we lose the temperature increase
+        state.temperature_increased = false;
         true
     }
 }
 
 struct IncreaseTemperatureAction {
     world_state: Arc<Mutex<WorldState>>,
-    name: String, // Name to identify the action
+    id: &'static str,
 }
 
 impl IncreaseTemperatureAction {
     fn new(world_state: Arc<Mutex<WorldState>>) -> Self {
         Self {
             world_state,
-            name: "IncreaseTemperatureAction".to_string(),
+            id: "IncreaseTemperatureAction",
         }
     }
 
-    fn name(&self) -> &str {
-        &self.name
-    }
-
-    fn target_state(&self) -> HashMap<String, Fact> {
-        let mut facts = HashMap::new();
-        facts.insert(
-            "temperature_increased".to_string(),
-            Fact::new("temperature_increased", "true", "IncreaseTemperatureAction"),
-        );
-        facts
-    }
-
-    fn preconditions(&self) -> HashMap<String, Fact> {
-        let mut facts = HashMap::new();
-        facts.insert(
-            "heater_on".to_string(),
-            Fact::new("heater_on", "true", "IncreaseTemperatureAction"),
-        );
-        facts
-    }
-
-    fn cost(&self) -> f32 {
-        2.0
+    fn id(&self) -> &str {
+        self.id
     }
 }
 
@@ -227,8 +154,8 @@ impl ActionFn for IncreaseTemperatureAction {
         let mut state = self.world_state.lock().unwrap();
 
         if state.heater_on {
-            state.temperature += 2;
-            println!("  Temperature increased to {}", state.temperature);
+            state.temperature_increased = true;
+            println!("  Temperature increased successfully!");
             true
         } else {
             println!("  Cannot increase temperature - heater is off!");
@@ -237,26 +164,15 @@ impl ActionFn for IncreaseTemperatureAction {
     }
 }
 
-// A wrapper to help with action identification
-struct IdentifiableAction {
-    name: String,
+// Helper struct to identify actions
+struct ActionWrapper {
+    id: &'static str,
     action: Arc<dyn ActionFn>,
 }
 
-impl IdentifiableAction {
-    fn new(name: &str, action: Arc<dyn ActionFn>) -> Self {
-        Self {
-            name: name.to_string(),
-            action,
-        }
-    }
-
-    fn name(&self) -> &str {
-        &self.name
-    }
-
-    fn action(&self) -> Arc<dyn ActionFn> {
-        self.action.clone()
+impl ActionWrapper {
+    fn new(id: &'static str, action: Arc<dyn ActionFn>) -> Self {
+        Self { id, action }
     }
 }
 
@@ -267,80 +183,74 @@ struct TemperatureControlPlanner;
 impl PlannerFn for TemperatureControlPlanner {
     async fn plan(
         &self,
-        state: &HashMap<String, Fact>,
+        world_state: &HashMap<String, Fact>,
         goal: &HashMap<String, Fact>,
-        actions: &[Arc<dyn ActionFn>],
+        available_actions: &[Arc<dyn ActionFn>],
     ) -> Vec<Arc<dyn ActionFn>> {
-        println!("Planning with current state: {:?}", state);
+        println!("Planning with world state: {:?}", world_state.keys());
 
-        // Convert actions to identifiable wrappers for better planning
-        // This is just a workaround for the example
-        let mut identifiable_actions = Vec::new();
-        for (i, action) in actions.iter().enumerate() {
-            // We'll use index as part of identification
-            let name = match i {
-                0 => "TurnHeaterOnAction",
-                1 => "TurnHeaterOffAction",
-                2 => "IncreaseTemperatureAction",
-                _ => "UnknownAction",
-            };
-            identifiable_actions.push(IdentifiableAction::new(name, action.clone()));
-        }
+        // Create wrapped actions for identification
+        let action_wrappers = vec![
+            ActionWrapper::new("TurnHeaterOnAction", available_actions[0].clone()),
+            ActionWrapper::new("TurnHeaterOffAction", available_actions[1].clone()),
+            ActionWrapper::new("IncreaseTemperatureAction", available_actions[2].clone()),
+        ];
 
-        // A simple planning strategy
         let mut plan = Vec::new();
 
-        if goal.contains_key("target_temperature_reached") {
-            if let (Some(temp_fact), Some(target_fact)) =
-                (state.get("temperature"), state.get("target_temperature"))
-            {
-                let current_temp: i32 = temp_fact.data().parse().unwrap_or(0);
-                let target_temp: i32 = target_fact.data().parse().unwrap_or(0);
+        // Check if we need to increase temperature
+        if let Some(goal_temp_increased) = goal.get("temperature_increased") {
+            if goal_temp_increased.data() == "true" {
+                // Check current state
+                let heater_on = world_state
+                    .get("heater_on")
+                    .map(|f| f.data() == "true")
+                    .unwrap_or(false);
 
-                println!(
-                    "Current temp: {}, Target temp: {}",
-                    current_temp, target_temp
-                );
+                let temp_increased = world_state
+                    .get("temperature_increased")
+                    .map(|f| f.data() == "true")
+                    .unwrap_or(false);
 
-                if current_temp < target_temp {
-                    // Need to increase temperature
-                    let heater_on = state
-                        .get("heater_on")
-                        .map(|f| f.data() == "true")
-                        .unwrap_or(false);
-
+                if !temp_increased {
+                    // We need to increase temperature
                     if !heater_on {
-                        // First, find the action that turns on the heater
-                        if let Some(turn_on_action) = identifiable_actions
+                        // First turn on heater if it's off
+                        if let Some(turn_on_wrapper) = action_wrappers
                             .iter()
-                            .find(|a| a.name() == "TurnHeaterOnAction")
+                            .find(|a| a.id == "TurnHeaterOnAction")
                         {
-                            plan.push(turn_on_action.action());
+                            plan.push(turn_on_wrapper.action.clone());
                         }
                     }
 
-                    // Then add an action to increase temperature
-                    if let Some(increase_action) = identifiable_actions
+                    // Then add temperature increase action
+                    if let Some(increase_wrapper) = action_wrappers
                         .iter()
-                        .find(|a| a.name() == "IncreaseTemperatureAction")
+                        .find(|a| a.id == "IncreaseTemperatureAction")
                     {
-                        plan.push(increase_action.action());
+                        plan.push(increase_wrapper.action.clone());
                     }
-                } else if current_temp > target_temp {
-                    // Need to decrease temperature - turn off heater
-                    let heater_on = state
-                        .get("heater_on")
-                        .map(|f| f.data() == "true")
-                        .unwrap_or(false);
+                }
+            }
+        }
 
-                    if heater_on {
-                        // Find action to turn heater off
-                        if let Some(turn_off_action) = identifiable_actions
-                            .iter()
-                            .find(|a| a.name() == "TurnHeaterOffAction")
-                        {
-                            plan.push(turn_off_action.action());
-                        }
+        // Check if we need to turn off heater
+        if let Some(goal_heater) = goal.get("heater_on") {
+            if goal_heater.data() == "false" {
+                // Check current state
+                let heater_on = world_state
+                    .get("heater_on")
+                    .map(|f| f.data() == "true")
+                    .unwrap_or(false);
+
+                if heater_on {
+                    // Need to turn off heater
+                    if let Some(turn_off_wrapper) = action_wrappers
+                        .iter()
+                        .find(|a| a.id == "TurnHeaterOffAction")
+                    {
+                        plan.push(turn_off_wrapper.action.clone());
                     }
                 }
             }
@@ -351,9 +261,24 @@ impl PlannerFn for TemperatureControlPlanner {
     }
 }
 
+// Function to print the current state
+fn print_state(world_state: &Arc<Mutex<WorldState>>) {
+    let state = world_state.lock().unwrap();
+    println!("Current state:");
+    println!("  Heater: {}", if state.heater_on { "ON" } else { "OFF" });
+    println!(
+        "  Temperature increased: {}",
+        if state.temperature_increased {
+            "YES"
+        } else {
+            "NO"
+        }
+    );
+}
+
 #[tokio::main]
 async fn main() {
-    println!("Starting Advanced Actor-based Temperature Control Agent");
+    println!("Starting Advanced Temperature Control Agent");
 
     // Create a local task set for actor-based tasks
     let local = tokio::task::LocalSet::new();
@@ -365,8 +290,8 @@ async fn main() {
 
             // Create sensors
             let sensors = vec![
+                Arc::new(HeaterSensor::new(Arc::clone(&world_state))) as Arc<dyn SensorFn>,
                 Arc::new(TemperatureSensor::new(Arc::clone(&world_state))) as Arc<dyn SensorFn>,
-                Arc::new(HeaterStateSensor::new(Arc::clone(&world_state))) as Arc<dyn SensorFn>,
             ];
 
             // Create actions
@@ -384,50 +309,57 @@ async fn main() {
             let controller =
                 ActorAutomatonController::new("TemperatureController", sensors, actions, planner);
 
-            // Set a goal to reach the target temperature
+            // Initial goal: increase temperature
             let mut goal = HashMap::new();
             goal.insert(
-                "target_temperature_reached".to_string(),
-                Fact::new("target_temperature_reached", "true", "UserGoal"),
+                "temperature_increased".to_string(),
+                Fact::new("temperature_increased", "true", "UserGoal"),
             );
             controller.set_goal(goal).await;
 
             // Start the automaton
             controller.start().await;
 
-            // Run for a while to let the automaton work
-            for i in 1..=10 {
-                println!("\n--- Cycle {} ---", i);
-                sleep(Duration::from_secs(1)).await;
+            // Simulation loop
+            for cycle in 1..=5 {
+                println!("\n--- Cycle {} ---", cycle);
 
                 // Print current state
+                print_state(&world_state);
+
+                // Check if we've reached the goal
                 {
                     let state = world_state.lock().unwrap();
-                    println!(
-                        "Current temperature: {}, Target: {}, Heater: {}",
-                        state.temperature,
-                        state.target_temperature,
-                        if state.heater_on { "ON" } else { "OFF" }
-                    );
 
-                    // If we've reached the target temperature, we're done
-                    if state.temperature >= state.target_temperature {
-                        println!("Target temperature reached!");
-                        // We need to drop the current lock before acquiring it again
+                    // If we've reached our initial goal and it's cycle 3, change the goal
+                    if state.temperature_increased && cycle == 3 {
+                        println!("Temperature increase achieved!");
+                        println!("New goal: Turn off heater to save energy");
+
+                        // Drop the lock before setting a new goal
                         drop(state);
-                        if i < 10 {
-                            // Change the target to demonstrate the system adapting
-                            println!("Setting new target temperature to 26°C");
-                            let mut state = world_state.lock().unwrap();
-                            state.target_temperature = 26;
-                        }
+
+                        // Change goal to turning off the heater
+                        let mut new_goal = HashMap::new();
+                        new_goal.insert(
+                            "heater_on".to_string(),
+                            Fact::new("heater_on", "false", "UserGoal"),
+                        );
+                        controller.set_goal(new_goal).await;
                     }
                 }
+
+                // Wait before next cycle
+                sleep(Duration::from_secs(1)).await;
             }
 
             // Stop the automaton when done
             controller.stop().await;
-            println!("Shutting down Temperature Control Agent");
+
+            // Print final state
+            println!("\nFinal state:");
+            print_state(&world_state);
+            println!("Advanced temperature control simulation complete!");
         })
         .await;
 }

@@ -18,17 +18,19 @@
 //!
 //! The automaton follows a continuous cycle of sensing, planning, and acting to achieve its goals.
 
+use async_trait::async_trait;
 use std::collections::HashMap;
 use std::fmt;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 use tokio::sync::Mutex;
 
-use crate::action::Actions;
+use crate::action::ActionResponse;
 use crate::error::Result;
 use crate::planner::Planner;
-use crate::sensor::Sensors;
 use crate::world_state::WorldState;
+use crate::Action;
+use crate::Sensor;
 
 /// Represents a fact gathered from the environment.
 ///
@@ -38,7 +40,7 @@ use crate::world_state::WorldState;
 /// # Examples
 ///
 /// ```
-/// use goaprs::Fact;
+/// use goaprs::utils::automaton::Fact;
 ///
 /// let fact = Fact::new("temperature", "72.5", "temperature_sensor");
 /// assert_eq!(fact.binding(), "temperature");
@@ -52,7 +54,7 @@ use crate::world_state::WorldState;
 /// # Examples
 ///
 /// ```
-/// use goaprs::Fact;
+/// use goaprs::utils::automaton::Fact;
 ///
 /// let fact = Fact::new("temperature", "72.5", "temperature_sensor");
 /// assert_eq!(fact.binding(), "temperature");
@@ -162,6 +164,14 @@ pub enum State {
     Acting,
 }
 
+/// Trait for action functionality
+
+#[async_trait]
+pub trait ActionFn: Send + Sync {
+    /// Executes the action and returns success or failure
+    async fn exec(&self, world_state: &HashMap<String, Fact>) -> bool;
+}
+
 /// A finite state machine automaton that manages the GOAP (Goal-Oriented Action Planning) process.
 ///
 /// The automaton is the core component of the GOAP system. It:
@@ -191,10 +201,10 @@ pub struct Automaton {
     /// The working memory containing facts gathered from sensors
     working_memory: Arc<Mutex<Vec<Fact>>>,
     /// Collection of sensors used to gather information from the environment
-    sensors: Sensors,
+    sensors: Vec<Sensor>,
     /// Collection of available actions the automaton can perform
     #[allow(dead_code)]
-    actions: Actions,
+    actions: Vec<Action>,
     /// The planner used to generate action sequences
     planner: Planner,
     /// The current action plan being executed
@@ -219,10 +229,12 @@ impl Automaton {
     ///
     /// ```
     /// use std::collections::HashMap;
-    /// use goaprs::{Automaton, Sensors, Actions};
+    /// use goaprs::utils::automaton::{Automaton};
+    /// use goaprs::sensor::Sensor;
+    /// use goaprs::action::Action;
     ///
-    /// let sensors = Sensors::new();
-    /// let actions = Actions::new();
+    /// let sensors = Vec::<Sensor>::new();
+    /// let actions = Vec::<Action>::new();
     /// let mut initial_state = HashMap::new();
     /// initial_state.insert("location".to_string(), "home".to_string());
     ///
@@ -230,8 +242,8 @@ impl Automaton {
     /// ```
     pub fn new(
         name: impl Into<String>,
-        sensors: Sensors,
-        actions: Actions,
+        sensors: Vec<Sensor>,
+        actions: Vec<Action>,
         world_state_facts: HashMap<String, String>,
     ) -> Self {
         Self {
@@ -240,7 +252,7 @@ impl Automaton {
             world_state: Arc::new(Mutex::new(WorldState::from_hashmap(world_state_facts))),
             goal: Arc::new(Mutex::new(WorldState::new())),
             working_memory: Arc::new(Mutex::new(Vec::new())),
-            sensors,
+            sensors: sensors,
             actions: actions.clone(),
             planner: Planner::new(actions),
             action_plan: Arc::new(Mutex::new(Vec::new())),
@@ -383,7 +395,7 @@ impl Automaton {
     /// # Examples
     ///
     /// ```
-    /// # async fn example(automaton: &goaprs::Automaton) -> Result<(), Box<dyn std::error::Error>> {
+    /// # async fn example(automaton: &goaprs::utils::automaton::Automaton) -> Result<(), Box<dyn std::error::Error>> {
     /// // Gather information from all sensors
     /// automaton.sense().await?;
     /// # Ok(())
@@ -409,7 +421,7 @@ impl Automaton {
     /// # Examples
     ///
     /// ```
-    /// # async fn example(automaton: &goaprs::Automaton) -> Result<(), Box<dyn std::error::Error>> {
+    /// # async fn example(automaton: &goaprs::utils::automaton::Automaton) -> Result<(), Box<dyn std::error::Error>> {
     /// // Gather information from all sensors
     /// automaton.sense().await?;
     /// # Ok(())
@@ -482,10 +494,10 @@ impl Automaton {
     /// # Examples
     ///
     /// ```
-    /// # async fn example(automaton: &goaprs::Automaton) -> Result<(), Box<dyn std::error::Error>> {
-    /// // Generate a plan to achieve the goal
-    /// let action_plan = automaton.plan().await?;
-    /// println!("Generated plan with {} actions", action_plan.len());
+    /// # async fn example(automaton: &goaprs::utils::automaton::Automaton) -> Result<(), Box<dyn std::error::Error>> {
+    /// // Create a plan to achieve a goal
+    /// let plan = automaton.plan().await?;
+    /// println!("Generated plan with {} actions", plan.len());
     /// # Ok(())
     /// # }
     /// ```
@@ -513,9 +525,20 @@ impl Automaton {
             goal_hash = goal.iter().map(|(k, v)| (k.clone(), v.clone())).collect();
         }
 
+        // Convert HashMaps to State objects
+        let mut current_state = crate::state::State::new();
+        for (k, v) in world_hash.iter() {
+            current_state.set(k, v == "true");
+        }
+
+        let mut goal_state = crate::state::State::new();
+        for (k, v) in goal_hash.iter() {
+            goal_state.set(k, v == "true");
+        }
+
         // Generate plan
-        let mut planner = self.planner.clone();
-        let plan = planner.plan(&world_hash, &goal_hash)?;
+        let planner = self.planner.clone();
+        let plan = planner.plan(&current_state, &goal_state)?;
 
         // Store the action plan
         {
@@ -546,7 +569,7 @@ impl Automaton {
     /// # Examples
     ///
     /// ```
-    /// # async fn example(automaton: &goaprs::Automaton) -> Result<(), Box<dyn std::error::Error>> {
+    /// # async fn example(automaton: &goaprs::utils::automaton::Automaton) -> Result<(), Box<dyn std::error::Error>> {
     /// // Execute the current action plan
     /// let responses = automaton.act().await?;
     /// for (i, response) in responses.iter().enumerate() {
@@ -574,7 +597,7 @@ impl Automaton {
     /// # Examples
     ///
     /// ```
-    /// # async fn example(automaton: &goaprs::Automaton) -> Result<(), Box<dyn std::error::Error>> {
+    /// # async fn example(automaton: &goaprs::utils::automaton::Automaton) -> Result<(), Box<dyn std::error::Error>> {
     /// // Execute the current action plan
     /// let responses = automaton.act().await?;
     /// for (i, response) in responses.iter().enumerate() {
@@ -583,7 +606,7 @@ impl Automaton {
     /// # Ok(())
     /// # }
     /// ```
-    pub async fn act(&self) -> Result<Vec<crate::action::ActionResponse>> {
+    pub async fn act(&self) -> Result<Vec<ActionResponse>> {
         // Set state to Acting
         {
             let mut state_lock = self.state.lock().await;
@@ -666,10 +689,12 @@ impl Automaton {
 /// ```
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// use std::collections::HashMap;
-/// use goaprs::{AutomatonController, Sensors, Actions};
+/// use goaprs::utils::automaton::AutomatonController;
+/// use goaprs::sensor::Sensor;
+/// use goaprs::action::Action;
 ///
-/// let sensors = Sensors::new();
-/// let actions = Actions::new();
+/// let sensors = Vec::<Sensor>::new();
+/// let actions = Vec::<Action>::new();
 /// let mut world_state = HashMap::new();
 /// world_state.insert("location".to_string(), "home".to_string());
 ///
@@ -698,10 +723,12 @@ impl Automaton {
 /// ```
 /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
 /// use std::collections::HashMap;
-/// use goaprs::{AutomatonController, Sensors, Actions};
+/// use goaprs::utils::automaton::AutomatonController;
+/// use goaprs::sensor::Sensor;
+/// use goaprs::action::Action;
 ///
-/// let sensors = Sensors::new();
-/// let actions = Actions::new();
+/// let sensors = Vec::<Sensor>::new();
+/// let actions = Vec::<Action>::new();
 /// let mut world_state = HashMap::new();
 /// world_state.insert("location".to_string(), "home".to_string());
 ///
@@ -741,8 +768,8 @@ impl AutomatonController {
     ///
     /// A new `AutomatonController` instance that manages an Automaton with the provided components
     pub fn new(
-        actions: Actions,
-        sensors: Sensors,
+        actions: Vec<crate::action::Action>,
+        sensors: Vec<crate::sensor::Sensor>,
         name: impl Into<String>,
         world_state: HashMap<String, String>,
     ) -> Self {
@@ -815,14 +842,19 @@ impl AutomatonController {
     ///
     /// A `Result` indicating success or failure
     ///
+    /// # Notes
+    ///
+    /// This method must be called from within a tokio::task::LocalSet
+    /// since it uses tokio::task::spawn_local internally.
+    ///
     /// # Errors
     ///
     /// Returns an error if the running mutex is poisoned
     ///
     /// This method:
     /// 1. Sets the running flag to true
-    /// 2. Spawns a new thread that runs the automaton's sense-plan-act cycle
-    /// 3. The thread will continue until the controller is stopped
+    /// 2. Spawns a new local task that runs the automaton's sense-plan-act cycle
+    /// 3. The task will continue until the controller is stopped
     ///
     /// # Returns
     ///
@@ -840,8 +872,8 @@ impl AutomatonController {
         let automaton = self.automaton.clone();
         let running = self.running.clone();
 
-        // Spawn a task that runs the automaton loop
-        tokio::spawn(async move {
+        // Spawn a task on the local task set that runs the automaton loop
+        tokio::task::spawn_local(async move {
             loop {
                 let is_running = {
                     let running_guard = running.lock().await;
@@ -918,43 +950,55 @@ impl AutomatonController {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::action::{ActionFn, ActionResponse};
-    use crate::sensor::{SensorFn, SensorResponse};
+    use crate::error::Result;
+    use crate::sensor::{self, SensorResponse};
+    use crate::utils::actor::{self, SensorFn};
     use async_trait::async_trait;
+    use std::sync::Arc;
 
     struct TestSensor;
 
     #[async_trait]
     impl SensorFn for TestSensor {
-        async fn exec(&self) -> Result<SensorResponse> {
-            Ok(SensorResponse::new(
-                "test value".to_string(),
-                "".to_string(),
-                0,
-            ))
+        async fn exec(&self, _world_state: &HashMap<String, actor::Fact>) -> Vec<actor::Fact> {
+            vec![actor::Fact::new("test_key", "test value", "test_sensor")]
         }
     }
 
-    struct TestAction;
+    // Adapter to convert from actor::SensorFn to sensor::SensorFn
+    struct SensorAdapter {
+        sensor: Arc<dyn SensorFn>,
+    }
+
+    impl SensorAdapter {
+        fn new(sensor: Arc<dyn SensorFn>) -> Self {
+            Self { sensor }
+        }
+    }
 
     #[async_trait]
-    impl ActionFn for TestAction {
-        async fn exec(&self) -> Result<ActionResponse> {
-            Ok(ActionResponse::new(
-                "action executed".to_string(),
-                "".to_string(),
-                0,
-            ))
+    impl sensor::SensorFn for SensorAdapter {
+        async fn exec(&self) -> Result<SensorResponse> {
+            let facts = self.sensor.exec(&HashMap::new()).await;
+            let value = if !facts.is_empty() {
+                facts[0].data().to_string()
+            } else {
+                "".to_string()
+            };
+            Ok(SensorResponse::new(value, "".to_string(), 0))
         }
     }
+
+    // We don't need TestAction as we're using Action directly in the test
 
     #[tokio::test]
     async fn test_automaton_basic_cycle() {
         // Create sensors and actions
-        let mut sensors = Sensors::new();
-        sensors.add("test_sensor", "test_key", TestSensor).unwrap();
+        let test_sensor = Arc::new(TestSensor);
+        let sensor_adapter = SensorAdapter::new(test_sensor);
+        let sensors = vec![Sensor::new("test_sensor", "test_key", sensor_adapter)];
 
-        let mut actions = Actions::new();
+        let mut actions = vec![];
 
         let mut conditions = HashMap::new();
         conditions.insert("test_key".to_string(), "test value".to_string());
@@ -962,9 +1006,15 @@ mod tests {
         let mut effects = HashMap::new();
         effects.insert("goal_key".to_string(), "goal value".to_string());
 
-        actions
-            .add("test_action", conditions, effects, TestAction, 1.0)
-            .unwrap();
+        // Create a test action with the conditions and effects
+        let mut test_action = Action::new("test_action", 1.0).unwrap();
+        for (key, value) in conditions {
+            test_action.preconditions.set(&key, value == "true");
+        }
+        for (key, value) in effects {
+            test_action.effects.set(&key, value == "true");
+        }
+        actions.push(test_action);
 
         // Creates a new automaton with the given name, sensors, actions, and initial world state.
         //
@@ -1017,12 +1067,12 @@ mod tests {
         let plan = automaton.plan().await.unwrap();
         assert_eq!(automaton.state().await.unwrap(), State::Planning);
         assert_eq!(plan.len(), 1);
-        assert_eq!(plan[0].name(), "test_action");
+        assert_eq!(plan[0].name, "test_action");
 
         // Act
         let responses = automaton.act().await.unwrap();
         assert_eq!(automaton.state().await.unwrap(), State::Acting);
         assert_eq!(responses.len(), 1);
-        assert_eq!(responses[0].stdout(), "action executed");
+        assert_eq!(responses[0].stdout(), "Executed action: test_action");
     }
 }

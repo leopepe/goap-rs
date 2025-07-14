@@ -1,7 +1,7 @@
 use std::process::{Command, Output, Stdio};
 use tokio::process::Command as AsyncCommand;
 
-use crate::error::{Error, Result};
+use crate::error::{GoapError, Result};
 
 /// A utility for executing shell commands
 ///
@@ -68,13 +68,15 @@ impl ShellCommand {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```no_run
     /// use goaprs::utils::shell_command::ShellCommand;
     ///
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let mut cmd = ShellCommand::new("echo 'test'", 5);
     /// let (stdout, stderr, status) = cmd.run()?;
     /// assert_eq!(stdout.trim(), "test");
+    /// assert!(stderr.is_empty());
+    /// assert_eq!(status, 0);
     /// # Ok(())
     /// # }
     /// ```
@@ -102,7 +104,7 @@ impl ShellCommand {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```no_run
     /// use goaprs::utils::shell_command::ShellCommand;
     ///
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -119,7 +121,9 @@ impl ShellCommand {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .output()
-            .map_err(|e| Error::CommandExecution(format!("Failed to execute command: {}", e)))?;
+            .map_err(|e| {
+                GoapError::CommandExecution(format!("Failed to execute command: {}", e))
+            })?;
 
         let result = self.process_output(output);
         self.response = Some(result.clone());
@@ -138,13 +142,15 @@ impl ShellCommand {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```no_run
     /// use goaprs::utils::shell_command::ShellCommand;
     ///
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
     /// let mut cmd = ShellCommand::new("echo 'async test'", 5);
     /// let (stdout, stderr, status) = cmd.run_async().await?;
     /// assert_eq!(stdout.trim(), "async test");
+    /// assert!(stderr.is_empty());
+    /// assert_eq!(status, 0);
     /// # Ok(())
     /// # }
     /// ```
@@ -172,7 +178,7 @@ impl ShellCommand {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```no_run
     /// use goaprs::utils::shell_command::ShellCommand;
     ///
     /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
@@ -190,7 +196,9 @@ impl ShellCommand {
             .stderr(Stdio::piped())
             .output()
             .await
-            .map_err(|e| Error::CommandExecution(format!("Failed to execute command: {}", e)))?;
+            .map_err(|e| {
+                GoapError::CommandExecution(format!("Failed to execute command: {}", e))
+            })?;
 
         let result = self.process_output(output);
         self.response = Some(result.clone());

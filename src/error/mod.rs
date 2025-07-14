@@ -60,15 +60,6 @@ pub enum GoapError {
     #[error("Sensor already in collection: {0}")]
     SensorAlreadyInCollection(String),
 
-    // Plan errors
-    /// A general plan-related error with a message describing what went wrong
-    #[error("Plan error: {0}")]
-    Plan(String),
-
-    /// Error when planning algorithm fails to produce a valid action sequence
-    #[error("Failed to produce a plan")]
-    PlanFailed,
-
     // Action errors
     /// A general action-related error with a message describing what went wrong
     #[error("Action error: {0}")]
@@ -99,11 +90,6 @@ pub enum GoapError {
     /// Error when executing a shell command fails
     #[error("Command execution failed: {0}")]
     CommandExecution(String),
-    #[error("Action precondition not met: {0}")]
-    PreconditionNotMet(String),
-
-    #[error("Action cost must be positive")]
-    InvalidActionCost,
 
     // Graph errors
     /// A general graph-related error with a message describing what went wrong
@@ -114,13 +100,7 @@ pub enum GoapError {
     #[error("No path found in graph")]
     NoPathFound,
 
-    // IO errors
-    #[error("IO error: {0}")]
-    Io(#[from] std::io::Error),
-
-    // Command execution errors
-    #[error("Command execution failed: {0}")]
-    CommandExecution(String),
+    // IO errors already defined above
 
     // Serialization errors
     /// A wrapper around serde_json serialization/deserialization errors
@@ -131,18 +111,6 @@ pub enum GoapError {
     /// Catch-all for errors that don't fit into other categories
     #[error("Other error: {0}")]
     Other(String),
-
-    /// Error when attempting to access a plan that hasn't been generated
-    #[error("No plan has been generated yet")]
-    NoPlanGenerated,
-
-    /// Error when the planner cannot find any valid sequence of actions to achieve the goal
-    #[error("No valid plan found to achieve the goal")]
-    NoPlanFound,
-
-    /// Error when attempting an invalid state transition in the automaton
-    #[error("Invalid state transition: {0}")]
-    InvalidStateTransition(String),
 }
 
 /// Result type alias for GOAP operations
@@ -169,9 +137,6 @@ pub enum GoapError {
 /// // Error case
 /// assert!(might_fail(false).is_err());
 /// ```
-}
-
-/// Result type for GOAP operations
 pub type Result<T> = std::result::Result<T, GoapError>;
 
 #[cfg(test)]

@@ -2,8 +2,6 @@ use crate::error::{GoapError, Result};
 use std::process::{Command, Output, Stdio};
 use tokio::process::Command as AsyncCommand;
 
-use crate::error::{GoapError, Result};
-
 /// A utility for executing shell commands
 pub struct ShellCommand {
     /// The command to execute

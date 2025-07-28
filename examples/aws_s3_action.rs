@@ -56,16 +56,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     // Create initial state
     let mut state = State::new();
-    state.set("aws_credentials_loaded", true);
-    state.set("region", true);
+    state.set("aws_credentials_loaded", "true");
+    state.set("region", "true");
 
     // Create preconditions
     let mut preconditions = State::new();
-    preconditions.set("aws_credentials_loaded", true);
+    preconditions.set("aws_credentials_loaded", "true");
 
     // Create effects
     let mut effects = State::new();
-    effects.set("buckets_listed", true);
+    effects.set("buckets_listed", "true");
 
     // Create the action
     let mut list_buckets_action = Action::new("list_buckets", 0.1).unwrap();
@@ -119,7 +119,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         list_buckets_action.apply_effects(&mut state);
 
         // Verify the state was updated
-        assert_eq!(state.get("buckets_listed"), Some(true));
+        assert_eq!(state.get("buckets_listed"), Some("true"));
     } else {
         println!("Cannot perform the list_buckets action, preconditions not met");
     }

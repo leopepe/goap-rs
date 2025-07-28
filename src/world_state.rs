@@ -83,31 +83,33 @@
 //! In a complete GOAP system, `WorldState` works together with `Action`s to create plans:
 //!
 //! ```
-//! use goaprs::{Action, world_state::WorldState};
-//!
-//! // Current world state
-//! let mut current_state = WorldState::new();
-//! current_state.insert("has_axe".to_string(), "true".to_string());
-//! current_state.insert("has_wood".to_string(), "false".to_string());
-//! current_state.insert("at_location".to_string(), "home".to_string());
-//!
-//! // Goal state - we need wood
-//! let mut goal_state = WorldState::new();
-//! goal_state.insert("has_wood".to_string(), "true".to_string());
+//! use goaprs::{Action, State};
 //!
 //! // Create actions for our agent
 //! let mut move_to_forest = Action::new("move_to_forest", 1.0).unwrap();
-//! move_to_forest.preconditions.inner_mut().insert("at_location".to_string(), "home".to_string());
-//! move_to_forest.effects.inner_mut().insert("at_location".to_string(), "forest".to_string());
+//! move_to_forest.preconditions.set("at_home", true);
+//! move_to_forest.effects.set("at_forest", true);
+//! move_to_forest.effects.set("at_home", false);
 //!
 //! let mut chop_wood = Action::new("chop_wood", 2.0).unwrap();
-//! chop_wood.preconditions.inner_mut().insert("has_axe".to_string(), "true".to_string());
-//! chop_wood.preconditions.inner_mut().insert("at_location".to_string(), "forest".to_string());
-//! chop_wood.effects.inner_mut().insert("has_wood".to_string(), "true".to_string());
+//! chop_wood.preconditions.set("has_axe", true);
+//! chop_wood.preconditions.set("at_forest", true);
+//! chop_wood.effects.set("has_wood", true);
+//!
+//! // Current world state
+//! let mut current_state = State::new();
+//! current_state.set("has_axe", true);
+//! current_state.set("at_home", true);
+//! current_state.set("at_forest", false);
+//! current_state.set("has_wood", false);
+//!
+//! // Goal state - we need wood
+//! let mut goal_state = State::new();
+//! goal_state.set("has_wood", true);
 //!
 //! // Planning process (simplified)
 //! let mut plan = Vec::new();
-//! let mut simulated_state = current_state.clone();
+//! let mut simulated_state = current_state;  // Using a copy of current_state
 //!
 //! // Check if move_to_forest can be performed
 //! if move_to_forest.can_perform(&simulated_state) {

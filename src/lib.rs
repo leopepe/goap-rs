@@ -8,10 +8,13 @@ pub mod utils;
 pub mod visualizer;
 pub mod world_state;
 
-pub use action::Action;
+pub use action::{Action, ActionResponse};
 pub use error::{GoapError, Result};
 pub use planner::Planner;
-pub use search::{AStarSearch, DijkstraSearch, SearchAlgorithm};
+pub use search::{
+    AStarSearch, DefaultHeuristic, DijkstraSearch, HeuristicStrategy, SearchAlgorithm,
+    ZeroHeuristic,
+};
 pub use sensor::Sensor;
 pub use state::State;
 pub use utils::actor::ActorAutomatonController;

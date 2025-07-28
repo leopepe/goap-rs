@@ -328,10 +328,10 @@ impl HeuristicStrategy for DefaultHeuristic {
 /// use goaprs::{ZeroHeuristic, HeuristicStrategy, State};
 ///
 /// let mut state1 = State::new();
-/// state1.set("position", "start");
+/// state1.set("position", true);
 ///
 /// let mut state2 = State::new();
-/// state2.set("position", "goal");
+/// state2.set("position", false);
 ///
 /// let heuristic = ZeroHeuristic;
 /// let estimate = heuristic.calculate(&state1, &state2);

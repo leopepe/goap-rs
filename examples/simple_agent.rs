@@ -6,27 +6,11 @@ use std::time::Duration;
 use goaprs::action::Action;
 use goaprs::error::Result;
 use goaprs::sensor::{SensorFn, SensorResponse, Sensors};
-use goaprs::utils::actor::ActionFn;
+// use goaprs::utils::actor::ActionFn;
 use goaprs::utils::automaton::AutomatonController;
 
 use async_trait::async_trait;
 use tokio::sync::Mutex;
-
-/// Domain-specific type for lamp status
-#[derive(Debug, Clone, PartialEq)]
-enum LampStatus {
-    On,
-    Off,
-}
-
-impl LampStatus {
-    fn as_str(&self) -> &'static str {
-        match self {
-            LampStatus::On => "on",
-            LampStatus::Off => "off",
-        }
-    }
-}
 
 /// A simple environment to store lamp state
 struct LampEnvironment {
@@ -59,70 +43,6 @@ impl SensorFn for LampSensor {
         let status = if is_on { "on" } else { "off" };
         Ok(SensorResponse::new(status.to_string(), String::new(), 0))
     }
-}
-
-/// Turn lamp on action
-struct TurnLampOnAction {
-    env: Arc<LampEnvironment>,
-}
-
-impl TurnLampOnAction {
-    fn new(env: Arc<LampEnvironment>) -> Self {
-        Self { env }
-    }
-}
-
-#[async_trait]
-impl ActionFn for TurnLampOnAction {
-    async fn exec(&self, _world_state: &HashMap<String, goaprs::utils::actor::Fact>) -> bool {
-        // Simulate some work
-        tokio::time::sleep(Duration::from_millis(500)).await;
-
-        println!("Turning lamp on...");
-        let mut is_on = self.env.is_on.lock().await;
-        *is_on = true;
-        true
-    }
-}
-
-/// Turn lamp off action
-struct TurnLampOffAction {
-    env: Arc<LampEnvironment>,
-}
-
-impl TurnLampOffAction {
-    fn new(env: Arc<LampEnvironment>) -> Self {
-        Self { env }
-    }
-}
-
-#[async_trait]
-impl ActionFn for TurnLampOffAction {
-    async fn exec(&self, _world_state: &HashMap<String, goaprs::utils::actor::Fact>) -> bool {
-        // Simulate some work
-        tokio::time::sleep(Duration::from_millis(500)).await;
-
-        println!("Turning lamp off...");
-        let mut is_on = self.env.is_on.lock().await;
-        *is_on = false;
-        true
-    }
-}
-
-/// Simple custom action factory
-fn create_simple_action() -> impl ActionFn {
-    struct SimpleAction;
-
-    #[async_trait]
-    impl ActionFn for SimpleAction {
-        async fn exec(&self, _world_state: &HashMap<String, goaprs::utils::actor::Fact>) -> bool {
-            println!("Performing simple action...");
-            tokio::time::sleep(Duration::from_millis(300)).await;
-            true
-        }
-    }
-
-    SimpleAction
 }
 
 #[tokio::main]

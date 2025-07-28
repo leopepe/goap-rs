@@ -87,25 +87,25 @@
 //!
 //! // Create actions for our agent
 //! let mut move_to_forest = Action::new("move_to_forest", 1.0).unwrap();
-//! move_to_forest.preconditions.set("at_home", true);
-//! move_to_forest.effects.set("at_forest", true);
-//! move_to_forest.effects.set("at_home", false);
+//! move_to_forest.preconditions.set("at_home", "true".to_string());
+//! move_to_forest.effects.set("at_forest", "true".to_string());
+//! move_to_forest.effects.set("at_home", "false".to_string());
 //!
 //! let mut chop_wood = Action::new("chop_wood", 2.0).unwrap();
-//! chop_wood.preconditions.set("has_axe", true);
-//! chop_wood.preconditions.set("at_forest", true);
-//! chop_wood.effects.set("has_wood", true);
+//! chop_wood.preconditions.set("has_axe", "true".to_string());
+//! chop_wood.preconditions.set("at_forest", "true".to_string());
+//! chop_wood.effects.set("has_wood", "true".to_string());
 //!
 //! // Current world state
 //! let mut current_state = State::new();
-//! current_state.set("has_axe", true);
-//! current_state.set("at_home", true);
-//! current_state.set("at_forest", false);
-//! current_state.set("has_wood", false);
+//! current_state.set("has_axe", "true".to_string());
+//! current_state.set("at_home", "true".to_string());
+//! current_state.set("at_forest", "false".to_string());
+//! current_state.set("has_wood", "false".to_string());
 //!
 //! // Goal state - we need wood
 //! let mut goal_state = State::new();
-//! goal_state.set("has_wood", true);
+//! goal_state.set("has_wood", "true".to_string());
 //!
 //! // Planning process (simplified)
 //! let mut plan = Vec::new();

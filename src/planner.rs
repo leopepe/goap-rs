@@ -23,20 +23,20 @@
 //!
 //! // Step 1: Create actions that define what your agent can do
 //! let mut chop_tree = Action::new("chop_tree", 2.0).unwrap();
-//! chop_tree.preconditions.set("has_axe", true);
-//! chop_tree.effects.set("has_wood", true);
+//! chop_tree.preconditions.set("has_axe", "true");
+//! chop_tree.effects.set("has_wood", "true");
 //!
 //! let mut craft_axe = Action::new("craft_axe", 1.0).unwrap();
-//! craft_axe.preconditions.set("has_metal", true);
-//! craft_axe.effects.set("has_axe", true);
+//! craft_axe.preconditions.set("has_metal", "true");
+//! craft_axe.effects.set("has_axe", "true");
 //!
 //! let mut mine_ore = Action::new("mine_ore", 3.0).unwrap();
-//! mine_ore.preconditions.set("has_pickaxe", true);
-//! mine_ore.effects.set("has_metal", true);
+//! mine_ore.preconditions.set("has_pickaxe", "true");
+//! mine_ore.effects.set("has_metal", "true");
 //!
 //! let mut craft_pickaxe = Action::new("craft_pickaxe", 1.0).unwrap();
-//! craft_pickaxe.preconditions.set("has_wood", true);
-//! craft_pickaxe.effects.set("has_pickaxe", true);
+//! craft_pickaxe.preconditions.set("has_wood", "true");
+//! craft_pickaxe.effects.set("has_pickaxe", "true");
 //!
 //! // Step 2: Create a planner with all available actions
 //! let actions = vec![chop_tree, craft_axe, mine_ore, craft_pickaxe];
@@ -44,11 +44,11 @@
 //!
 //! // Step 3: Define current state
 //! let mut current_state = State::new();
-//! current_state.set("has_wood", true); // We start with some wood
+//! current_state.set("has_wood", "true"); // We start with some wood
 //!
 //! // Step 4: Define goal state
 //! let mut goal_state = State::new();
-//! goal_state.set("has_metal", true); // We want to have metal
+//! goal_state.set("has_metal", "true"); // We want to have metal
 //!
 //! // Step 5: Generate a plan
 //! let plan = planner.plan(&current_state, &goal_state).unwrap();
@@ -76,26 +76,26 @@ use crate::{Action, Result, State};
 ///
 /// // Create available actions
 /// let mut goto_store = Action::new("go_to_store", 1.0).unwrap();
-/// goto_store.preconditions.set("at_home", true);
-/// goto_store.effects.set("at_store", true);
-/// goto_store.effects.set("at_home", false);
+/// goto_store.preconditions.set("at_home", "true");
+/// goto_store.effects.set("at_store", "true");
+/// goto_store.effects.set("at_home", "false");
 ///
 /// let mut buy_food = Action::new("buy_food", 2.0).unwrap();
-/// buy_food.preconditions.set("at_store", true);
-/// buy_food.preconditions.set("has_money", true);
-/// buy_food.effects.set("has_food", true);
+/// buy_food.preconditions.set("at_store", "true");
+/// buy_food.preconditions.set("has_money", "true");
+/// buy_food.effects.set("has_food", "true");
 ///
 /// // Create a planner with these actions
 /// let planner = Planner::new(vec![goto_store, buy_food]);
 ///
 /// // Define current state
 /// let mut current_state = State::new();
-/// current_state.set("at_home", true);
-/// current_state.set("has_money", true);
+/// current_state.set("at_home", "true");
+/// current_state.set("has_money", "true");
 ///
 /// // Define goal state
 /// let mut goal_state = State::new();
-/// goal_state.set("has_food", true);
+/// goal_state.set("has_food", "true");
 ///
 /// // Find plan to achieve goal
 /// let plan = planner.plan(&current_state, &goal_state).unwrap();
@@ -136,23 +136,23 @@ use crate::{Action, Result, State};
 ///
 /// // Define actions for a cooking agent
 /// let mut get_ingredients = Action::new("get_ingredients", 1.0).unwrap();
-/// get_ingredients.preconditions.set("has_money", true);
-/// get_ingredients.effects.set("has_ingredients", true);
+/// get_ingredients.preconditions.set("has_money", "true");
+/// get_ingredients.effects.set("has_ingredients", "true");
 ///
 /// let mut cook_meal = Action::new("cook_meal", 2.0).unwrap();
-/// cook_meal.preconditions.set("has_ingredients", true);
-/// cook_meal.effects.set("has_meal", true);
+/// cook_meal.preconditions.set("has_ingredients", "true");
+/// cook_meal.effects.set("has_meal", "true");
 ///
 /// // Create a planner with these actions
 /// let planner = Planner::new(vec![get_ingredients, cook_meal]);
 ///
 /// // Define current state - we have money but no ingredients
 /// let mut current_state = State::new();
-/// current_state.set("has_money", true);
+/// current_state.set("has_money", "true");
 ///
 /// // Define goal state - we want a meal
 /// let mut goal_state = State::new();
-/// goal_state.set("has_meal", true);
+/// goal_state.set("has_meal", "true");
 ///
 /// // Generate a plan
 /// let plan = planner.plan(&current_state, &goal_state).unwrap();
@@ -194,8 +194,8 @@ impl Planner {
     ///
     /// // Create an action for moving to a destination
     /// let mut move_action = Action::new("move", 1.0).unwrap();
-    /// move_action.preconditions.set("can_move", true);
-    /// move_action.effects.set("at_destination", true);
+    /// move_action.preconditions.set("can_move", "true");
+    /// move_action.effects.set("at_destination", "true");
     ///
     /// // Create a planner with this action
     /// let planner = Planner::new(vec![move_action]);
@@ -208,17 +208,17 @@ impl Planner {
     ///
     /// // Create actions for a farming scenario
     /// let mut till_soil = Action::new("till_soil", 2.0).unwrap();
-    /// till_soil.preconditions.set("has_hoe", true);
-    /// till_soil.effects.set("soil_prepared", true);
+    /// till_soil.preconditions.set("has_hoe", "true");
+    /// till_soil.effects.set("soil_prepared", "true");
     ///
     /// let mut plant_seeds = Action::new("plant_seeds", 1.0).unwrap();
-    /// plant_seeds.preconditions.set("soil_prepared", true);
-    /// plant_seeds.preconditions.set("has_seeds", true);
-    /// plant_seeds.effects.set("plants_growing", true);
+    /// plant_seeds.preconditions.set("soil_prepared", "true");
+    /// plant_seeds.preconditions.set("has_seeds", "true");
+    /// plant_seeds.effects.set("plants_growing", "true");
     ///
     /// let mut harvest_crops = Action::new("harvest_crops", 3.0).unwrap();
-    /// harvest_crops.preconditions.set("plants_growing", true);
-    /// harvest_crops.effects.set("has_food", true);
+    /// harvest_crops.preconditions.set("plants_growing", "true");
+    /// harvest_crops.effects.set("has_food", "true");
     ///
     /// // Create a planner with these farming actions
     /// let farming_planner = Planner::new(vec![till_soil, plant_seeds, harvest_crops]);
@@ -340,13 +340,13 @@ impl Planner {
     ///
     /// // Create action and planner
     /// let mut action = Action::new("take_action", 1.0).unwrap();
-    /// action.effects.set("goal_achieved", true);
+    /// action.effects.set("goal_achieved", "true");
     /// let planner = Planner::new(vec![action]);
     ///
     /// // Define states
     /// let current_state = State::new();
     /// let mut goal_state = State::new();
-    /// goal_state.set("goal_achieved", true);
+    /// goal_state.set("goal_achieved", "true");
     ///
     /// // Find plan
     /// let plan = planner.plan(&current_state, &goal_state).unwrap();
@@ -391,18 +391,18 @@ impl Planner {
     ///
     /// // Create a simple action
     /// let mut action = Action::new("light_fire", 1.0).unwrap();
-    /// action.preconditions.set("has_matches", true);
-    /// action.effects.set("fire_lit", true);
+    /// action.preconditions.set("has_matches", "true");
+    /// action.effects.set("fire_lit", "true");
     ///
     /// // Create planner
     /// let planner = Planner::new(vec![action]);
     ///
     /// // Define states
     /// let mut current_state = State::new();
-    /// current_state.set("has_matches", true);
+    /// current_state.set("has_matches", "true");
     ///
     /// let mut goal_state = State::new();
-    /// goal_state.set("fire_lit", true);
+    /// goal_state.set("fire_lit", "true");
     ///
     /// // Find plan
     /// let plan = planner.plan(&current_state, &goal_state).unwrap();
@@ -417,8 +417,8 @@ impl Planner {
     ///
     /// // Create an action that requires something we don't have
     /// let mut action = Action::new("cook_meal", 1.0).unwrap();
-    /// action.preconditions.set("has_ingredients", true);
-    /// action.effects.set("has_food", true);
+    /// action.preconditions.set("has_ingredients", "true");
+    /// action.effects.set("has_food", "true");
     ///
     /// let planner = Planner::new(vec![action]);
     ///
@@ -427,7 +427,7 @@ impl Planner {
     ///
     /// // We want food
     /// let mut goal_state = State::new();
-    /// goal_state.set("has_food", true);
+    /// goal_state.set("has_food", "true");
     ///
     /// // No plan should be possible
     /// let result = planner.plan(&current_state, &goal_state);
@@ -442,10 +442,10 @@ impl Planner {
     /// let planner = Planner::new(vec![]);
     ///
     /// let mut state = State::new();
-    /// state.set("goal_met", true);
+    /// state.set("goal_met", "true");
     ///
     /// let mut goal = State::new();
-    /// goal.set("goal_met", true);
+    /// goal.set("goal_met", "true");
     ///
     /// // Plan should be empty since goal is already satisfied
     /// let plan = planner.plan(&state, &goal).unwrap();
@@ -492,8 +492,8 @@ mod tests {
     fn make_action(
         name: &str,
         cost: f32,
-        pre: Vec<(&str, bool)>,
-        eff: Vec<(&str, bool)>,
+        pre: Vec<(&str, &str)>,
+        eff: Vec<(&str, &str)>,
     ) -> Action {
         let mut action = Action::new(name, cost).unwrap();
         for (k, v) in pre {
@@ -508,19 +508,19 @@ mod tests {
     #[test]
     fn test_simple_plan() {
         // a -> b -> c
-        let a = make_action("a", 1.0, vec![("start", true)], vec![("mid", true)]);
-        let b = make_action("b", 1.0, vec![("mid", true)], vec![("end", true)]);
-        let c = make_action("c", 1.0, vec![("end", true)], vec![("goal", true)]);
+        let a = make_action("a", 1.0, vec![("start", "true")], vec![("mid", "true")]);
+        let b = make_action("b", 1.0, vec![("mid", "true")], vec![("end", "true")]);
+        let c = make_action("c", 1.0, vec![("end", "true")], vec![("goal", "true")]);
         let planner = Planner::new(vec![a.clone(), b.clone(), c.clone()]);
 
         let mut initial = State::new();
-        initial.set("start", true);
-        initial.set("mid", false);
-        initial.set("end", false);
-        initial.set("goal", false);
+        initial.set("start", "true");
+        initial.set("mid", "false");
+        initial.set("end", "false");
+        initial.set("goal", "false");
 
         let mut goal = State::new();
-        goal.set("goal", true);
+        goal.set("goal", "true");
 
         let plan = planner.plan(&initial, &goal).unwrap();
         let names: Vec<_> = plan.iter().map(|a| a.name.as_str()).collect();
@@ -529,12 +529,12 @@ mod tests {
 
     #[test]
     fn test_no_plan_found() {
-        let a = make_action("a", 1.0, vec![("foo", true)], vec![("bar", true)]);
+        let a = make_action("a", 1.0, vec![("foo", "true")], vec![("bar", "true")]);
         let planner = Planner::new(vec![a]);
         let mut initial = State::new();
-        initial.set("foo", false);
+        initial.set("foo", "false");
         let mut goal = State::new();
-        goal.set("bar", true);
+        goal.set("bar", "true");
         let result = planner.plan(&initial, &goal);
         assert!(result.is_err());
     }
@@ -542,13 +542,13 @@ mod tests {
     #[test]
     fn test_plan_with_multiple_paths() {
         // Two ways to reach the goal, but one is cheaper
-        let a = make_action("a", 1.0, vec![("start", true)], vec![("goal", true)]);
-        let b = make_action("b", 5.0, vec![("start", true)], vec![("goal", true)]);
+        let a = make_action("a", 1.0, vec![("start", "true")], vec![("goal", "true")]);
+        let b = make_action("b", 5.0, vec![("start", "true")], vec![("goal", "true")]);
         let planner = Planner::new(vec![a.clone(), b.clone()]);
         let mut initial = State::new();
-        initial.set("start", true);
+        initial.set("start", "true");
         let mut goal = State::new();
-        goal.set("goal", true);
+        goal.set("goal", "true");
         let plan = planner.plan(&initial, &goal).unwrap();
         // Should pick the cheaper action
         assert_eq!(plan[0].name, "a");
@@ -556,14 +556,14 @@ mod tests {
 
     #[test]
     fn test_different_search_algorithms() {
-        let a = make_action("a", 1.0, vec![("start", true)], vec![("goal", true)]);
-        let b = make_action("b", 5.0, vec![("start", true)], vec![("goal", true)]);
+        let a = make_action("a", 1.0, vec![("start", "true")], vec![("goal", "true")]);
+        let b = make_action("b", 5.0, vec![("start", "true")], vec![("goal", "true")]);
         let actions = vec![a.clone(), b.clone()];
 
         let mut initial = State::new();
-        initial.set("start", true);
+        initial.set("start", "true");
         let mut goal = State::new();
-        goal.set("goal", true);
+        goal.set("goal", "true");
 
         // Test A* search
         let astar_planner =
@@ -585,153 +585,169 @@ mod tests {
 
         // Action 1: Gather Resources
         let mut gather_resources = Action::new("gather_resources", 1.0).unwrap();
-        gather_resources.preconditions.set("has_tools", true);
-        gather_resources.preconditions.set("has_energy", true);
-        gather_resources.preconditions.set("has_permission", true);
-        gather_resources.preconditions.set("weather_good", true);
-        gather_resources.preconditions.set("area_safe", true);
-        gather_resources.effects.set("has_wood", true);
-        gather_resources.effects.set("has_stone", true);
-        gather_resources.effects.set("has_metal", true);
-        gather_resources.effects.set("has_weather_protection", true);
+        gather_resources.preconditions.set("has_tools", "true");
+        gather_resources.preconditions.set("has_energy", "true");
+        gather_resources.preconditions.set("has_permission", "true");
+        gather_resources.preconditions.set("weather_good", "true");
+        gather_resources.preconditions.set("area_safe", "true");
+        gather_resources.effects.set("has_wood", "true");
+        gather_resources.effects.set("has_stone", "true");
+        gather_resources.effects.set("has_metal", "true");
+        gather_resources
+            .effects
+            .set("has_weather_protection", "true");
         actions.push(gather_resources);
 
         // Action 2: Process Materials
         let mut process_materials = Action::new("process_materials", 2.0).unwrap();
-        process_materials.preconditions.set("has_wood", true);
-        process_materials.preconditions.set("has_stone", true);
-        process_materials.preconditions.set("has_metal", true);
-        process_materials.preconditions.set("has_workshop", true);
-        process_materials.preconditions.set("has_skills", true);
-        process_materials.effects.set("has_processed_wood", true);
-        process_materials.effects.set("has_processed_stone", true);
-        process_materials.effects.set("has_processed_metal", true);
+        process_materials.preconditions.set("has_wood", "true");
+        process_materials.preconditions.set("has_stone", "true");
+        process_materials.preconditions.set("has_metal", "true");
+        process_materials.preconditions.set("has_workshop", "true");
+        process_materials.preconditions.set("has_skills", "true");
+        process_materials.effects.set("has_processed_wood", "true");
+        process_materials.effects.set("has_processed_stone", "true");
+        process_materials.effects.set("has_processed_metal", "true");
         actions.push(process_materials);
 
         // Action 3: Build Foundation
         let mut build_foundation = Action::new("build_foundation", 3.0).unwrap();
         build_foundation
             .preconditions
-            .set("has_processed_stone", true);
+            .set("has_processed_stone", "true");
         build_foundation
             .preconditions
-            .set("has_processed_metal", true);
-        build_foundation.preconditions.set("has_blueprint", true);
-        build_foundation.preconditions.set("has_equipment", true);
-        build_foundation.preconditions.set("has_workers", true);
-        build_foundation.effects.set("has_foundation", true);
-        build_foundation.effects.set("has_structure_started", true);
+            .set("has_processed_metal", "true");
+        build_foundation.preconditions.set("has_blueprint", "true");
+        build_foundation.preconditions.set("has_equipment", "true");
+        build_foundation.preconditions.set("has_workers", "true");
+        build_foundation.effects.set("has_foundation", "true");
+        build_foundation
+            .effects
+            .set("has_structure_started", "true");
         actions.push(build_foundation);
 
         // Action 4: Build Walls
         let mut build_walls = Action::new("build_walls", 4.0).unwrap();
-        build_walls.preconditions.set("has_foundation", true);
-        build_walls.preconditions.set("has_processed_wood", true);
-        build_walls.preconditions.set("has_processed_stone", true);
-        build_walls.preconditions.set("has_structure_started", true);
+        build_walls.preconditions.set("has_foundation", "true");
+        build_walls.preconditions.set("has_processed_wood", "true");
+        build_walls.preconditions.set("has_processed_stone", "true");
         build_walls
             .preconditions
-            .set("has_weather_protection", true);
-        build_walls.effects.set("has_walls", true);
-        build_walls.effects.set("has_basic_structure", true);
+            .set("has_structure_started", "true");
+        build_walls
+            .preconditions
+            .set("has_weather_protection", "true");
+        build_walls.effects.set("has_walls", "true");
+        build_walls.effects.set("has_basic_structure", "true");
         actions.push(build_walls);
 
         // Action 5: Install Roof
         let mut install_roof = Action::new("install_roof", 5.0).unwrap();
-        install_roof.preconditions.set("has_basic_structure", true);
-        install_roof.preconditions.set("has_processed_wood", true);
-        install_roof.preconditions.set("has_processed_metal", true);
         install_roof
             .preconditions
-            .set("has_roofing_materials", true);
-        install_roof.preconditions.set("has_safety_equipment", true);
-        install_roof.effects.set("has_roof", true);
+            .set("has_basic_structure", "true");
+        install_roof.preconditions.set("has_processed_wood", "true");
+        install_roof
+            .preconditions
+            .set("has_processed_metal", "true");
+        install_roof
+            .preconditions
+            .set("has_roofing_materials", "true");
+        install_roof
+            .preconditions
+            .set("has_safety_equipment", "true");
+        install_roof.effects.set("has_roof", "true");
         actions.push(install_roof);
 
         // Action 6: Install Windows
         let mut install_windows = Action::new("install_windows", 2.0).unwrap();
-        install_windows.preconditions.set("has_walls", true);
-        install_windows.preconditions.set("has_roof", true);
-        install_windows.preconditions.set("has_windows", true);
-        install_windows.preconditions.set("has_tools", true);
+        install_windows.preconditions.set("has_walls", "true");
+        install_windows.preconditions.set("has_roof", "true");
+        install_windows.preconditions.set("has_windows", "true");
+        install_windows.preconditions.set("has_tools", "true");
         install_windows
             .preconditions
-            .set("has_weather_protection", true);
-        install_windows.effects.set("has_installed_windows", true);
-        install_windows.effects.set("has_natural_light", true);
+            .set("has_weather_protection", "true");
+        install_windows.effects.set("has_installed_windows", "true");
+        install_windows.effects.set("has_natural_light", "true");
         actions.push(install_windows);
 
         // Action 7: Install Doors
         let mut install_doors = Action::new("install_doors", 2.0).unwrap();
-        install_doors.preconditions.set("has_walls", true);
-        install_doors.preconditions.set("has_roof", true);
-        install_doors.preconditions.set("has_doors", true);
-        install_doors.preconditions.set("has_tools", true);
+        install_doors.preconditions.set("has_walls", "true");
+        install_doors.preconditions.set("has_roof", "true");
+        install_doors.preconditions.set("has_doors", "true");
+        install_doors.preconditions.set("has_tools", "true");
         install_doors
             .preconditions
-            .set("has_weather_protection", true);
-        install_doors.effects.set("has_installed_doors", true);
-        install_doors.effects.set("has_access_points", true);
+            .set("has_weather_protection", "true");
+        install_doors.effects.set("has_installed_doors", "true");
+        install_doors.effects.set("has_access_points", "true");
         actions.push(install_doors);
 
         // Action 8: Install Utilities
         let mut install_utilities = Action::new("install_utilities", 6.0).unwrap();
         install_utilities
             .preconditions
-            .set("has_basic_structure", true);
-        install_utilities.preconditions.set("has_roof", true);
+            .set("has_basic_structure", "true");
+        install_utilities.preconditions.set("has_roof", "true");
         install_utilities
             .preconditions
-            .set("has_utility_plans", true);
+            .set("has_utility_plans", "true");
         install_utilities
             .preconditions
-            .set("has_utility_materials", true);
+            .set("has_utility_materials", "true");
         install_utilities
             .preconditions
-            .set("has_certified_electrician", true);
-        install_utilities.effects.set("has_electricity", true);
-        install_utilities.effects.set("has_plumbing", true);
-        install_utilities.effects.set("has_utilities", true);
+            .set("has_certified_electrician", "true");
+        install_utilities.effects.set("has_electricity", "true");
+        install_utilities.effects.set("has_plumbing", "true");
+        install_utilities.effects.set("has_utilities", "true");
         actions.push(install_utilities);
 
         // Action 9: Interior Finishing
         let mut interior_finishing = Action::new("interior_finishing", 4.0).unwrap();
-        interior_finishing.preconditions.set("has_utilities", true);
         interior_finishing
             .preconditions
-            .set("has_installed_windows", true);
+            .set("has_utilities", "true");
         interior_finishing
             .preconditions
-            .set("has_installed_doors", true);
+            .set("has_installed_windows", "true");
         interior_finishing
             .preconditions
-            .set("has_finishing_materials", true);
+            .set("has_installed_doors", "true");
         interior_finishing
             .preconditions
-            .set("has_interior_design_plan", true);
+            .set("has_finishing_materials", "true");
+        interior_finishing
+            .preconditions
+            .set("has_interior_design_plan", "true");
         interior_finishing
             .effects
-            .set("has_finished_interior", true);
-        interior_finishing.effects.set("has_livable_space", true);
+            .set("has_finished_interior", "true");
+        interior_finishing.effects.set("has_livable_space", "true");
         actions.push(interior_finishing);
 
         // Action 10: Final Inspection
         let mut final_inspection = Action::new("final_inspection", 1.0).unwrap();
         final_inspection
             .preconditions
-            .set("has_finished_interior", true);
-        final_inspection.preconditions.set("has_utilities", true);
+            .set("has_finished_interior", "true");
+        final_inspection.preconditions.set("has_utilities", "true");
         final_inspection
             .preconditions
-            .set("has_installed_windows", true);
+            .set("has_installed_windows", "true");
         final_inspection
             .preconditions
-            .set("has_installed_doors", true);
+            .set("has_installed_doors", "true");
         final_inspection
             .preconditions
-            .set("has_safety_checks", true);
-        final_inspection.effects.set("has_passed_inspection", true);
-        final_inspection.effects.set("has_completed_house", true);
+            .set("has_safety_checks", "true");
+        final_inspection
+            .effects
+            .set("has_passed_inspection", "true");
+        final_inspection.effects.set("has_completed_house", "true");
         actions.push(final_inspection);
 
         // Create the planner with all actions
@@ -739,30 +755,30 @@ mod tests {
 
         // Define the initial state with all required starting conditions
         let mut current_state = State::new();
-        current_state.set("has_tools", true);
-        current_state.set("has_energy", true);
-        current_state.set("has_permission", true);
-        current_state.set("weather_good", true);
-        current_state.set("area_safe", true);
-        current_state.set("has_workshop", true);
-        current_state.set("has_skills", true);
-        current_state.set("has_blueprint", true);
-        current_state.set("has_equipment", true);
-        current_state.set("has_workers", true);
-        current_state.set("has_roofing_materials", true);
-        current_state.set("has_safety_equipment", true);
-        current_state.set("has_windows", true);
-        current_state.set("has_doors", true);
-        current_state.set("has_utility_plans", true);
-        current_state.set("has_utility_materials", true);
-        current_state.set("has_certified_electrician", true);
-        current_state.set("has_finishing_materials", true);
-        current_state.set("has_interior_design_plan", true);
-        current_state.set("has_safety_checks", true);
+        current_state.set("has_tools", "true");
+        current_state.set("has_energy", "true");
+        current_state.set("has_permission", "true");
+        current_state.set("weather_good", "true");
+        current_state.set("area_safe", "true");
+        current_state.set("has_workshop", "true");
+        current_state.set("has_skills", "true");
+        current_state.set("has_blueprint", "true");
+        current_state.set("has_equipment", "true");
+        current_state.set("has_workers", "true");
+        current_state.set("has_roofing_materials", "true");
+        current_state.set("has_safety_equipment", "true");
+        current_state.set("has_windows", "true");
+        current_state.set("has_doors", "true");
+        current_state.set("has_utility_plans", "true");
+        current_state.set("has_utility_materials", "true");
+        current_state.set("has_certified_electrician", "true");
+        current_state.set("has_finishing_materials", "true");
+        current_state.set("has_interior_design_plan", "true");
+        current_state.set("has_safety_checks", "true");
 
         // Define the goal state
         let mut goal_state = State::new();
-        goal_state.set("has_completed_house", true);
+        goal_state.set("has_completed_house", "true");
 
         // Find a plan
         let plan = planner.plan(&current_state, &goal_state).unwrap();
@@ -791,7 +807,7 @@ mod tests {
             for (key, value) in action.preconditions.values() {
                 assert_eq!(
                     state.get(key),
-                    Some(*value),
+                    Some(value.as_str()),
                     "Precondition not met for action {}: {} should be {}",
                     action.name,
                     key,
@@ -800,14 +816,14 @@ mod tests {
             }
             // Apply effects
             for (key, value) in action.effects.values() {
-                state.set(key, *value);
+                state.set(key, value.clone());
             }
         }
         // Verify final state matches goal
         for (key, value) in goal_state.values() {
             assert_eq!(
                 state.get(key),
-                Some(*value),
+                Some(value.as_str()),
                 "Goal not achieved: {} should be {}",
                 key,
                 value

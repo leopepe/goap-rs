@@ -107,19 +107,19 @@ mod tests {
     fn test_visualize_plan() {
         // Create a simple action
         let mut action = Action::new("test_action", 1.0).unwrap();
-        action.preconditions.set("has_item", true);
-        action.effects.set("goal_achieved", true);
+        action.preconditions.set("has_item", "true");
+        action.effects.set("goal_achieved", "true");
 
         let actions = vec![action.clone()];
         let plan = vec![action];
 
         // Set up states
         let mut current_state = State::new();
-        current_state.set("has_item", true);
-        current_state.set("goal_achieved", false);
+        current_state.set("has_item", "true");
+        current_state.set("goal_achieved", "false");
 
         let mut goal_state = State::new();
-        goal_state.set("goal_achieved", true);
+        goal_state.set("goal_achieved", "true");
 
         // Create visualizer and generate DOT file
         let visualizer = GoapVisualizer::new();

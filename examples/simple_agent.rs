@@ -70,19 +70,19 @@ async fn main() -> std::result::Result<(), Box<dyn Error>> {
 
     // Create turn lamp on action
     let mut turn_on = Action::new("turn_lamp_on", 1.0)?;
-    turn_on.preconditions.set("lamp_status", false);
-    turn_on.effects.set("lamp_status", true);
+    turn_on.preconditions.set("lamp_status", "false");
+    turn_on.effects.set("lamp_status", "true");
     actions.push(turn_on);
 
     // Create turn lamp off action
     let mut turn_off = Action::new("turn_lamp_off", 1.0)?;
-    turn_off.preconditions.set("lamp_status", true);
-    turn_off.effects.set("lamp_status", false);
+    turn_off.preconditions.set("lamp_status", "true");
+    turn_off.effects.set("lamp_status", "false");
     actions.push(turn_off);
 
     // Create simple action
     let mut simple_action = Action::new("simple_action", 0.5)?;
-    simple_action.effects.set("simple_task", true);
+    simple_action.effects.set("simple_task", "true");
     actions.push(simple_action);
 
     // Set initial world state

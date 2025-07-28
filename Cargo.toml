@@ -1,6 +1,6 @@
 [package]
 name = "goaprs"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 authors = ["Leonardo Pepe de Freitas <lpepefreitas@gmail.com>"]
 description = "Goal Oriented Action Planning implementation in Rust"
@@ -21,6 +21,7 @@ strum_macros = "0.24.3"                                # Enum macros
 enum_dispatch = "0.3.11"                               # Dynamic dispatch for enums
 actix = "0.13.0"                                       # Actix actor framework
 tempfile = "3.8.0"                                     # Temporary file creation
+rand = "0.9.2"
 
 [dev-dependencies]
 criterion = "0.5.1"    # Benchmarking

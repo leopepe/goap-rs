@@ -20,25 +20,25 @@
 //!
 //! // Create some actions
 //! let mut get_axe = Action::new("get_axe", 1.0).unwrap();
-//! get_axe.preconditions.set("at_store", true);
-//! get_axe.effects.set("has_axe", true);
+//! get_axe.preconditions.set("at_store", "true");
+//! get_axe.effects.set("has_axe", "true");
 //!
 //! let mut go_to_store = Action::new("go_to_store", 2.0).unwrap();
-//! go_to_store.preconditions.set("at_home", true);
-//! go_to_store.effects.set("at_store", true);
-//! go_to_store.effects.set("at_home", false);
+//! go_to_store.preconditions.set("at_home", "true");
+//! go_to_store.effects.set("at_store", "true");
+//! go_to_store.effects.set("at_home", "false");
 //!
 //! let mut chop_wood = Action::new("chop_wood", 3.0).unwrap();
-//! chop_wood.preconditions.set("has_axe", true);
-//! chop_wood.effects.set("has_wood", true);
+//! chop_wood.preconditions.set("has_axe", "true");
+//! chop_wood.effects.set("has_wood", "true");
 //!
 //! // Define initial state
 //! let mut initial_state = State::new();
-//! initial_state.set("at_home", true);
+//! initial_state.set("at_home", "true");
 //!
 //! // Define goal state
 //! let mut goal_state = State::new();
-//! goal_state.set("has_wood", true);
+//! goal_state.set("has_wood", "true");
 //!
 //! // Create a search algorithm
 //! let search = AStarSearch::default();
@@ -119,9 +119,9 @@
 //!     fn calculate(&self, state: &State, goal: &State) -> f32 {
 //!         goal.values()
 //!             .iter()
-//!             .map(|(key, &value)| {
+//!             .map(|(key, value)| {
 //!                 let weight = if self.priority_keys.contains(key) { 2.0 } else { 1.0 };
-//!                 if state.get(key) != Some(value) {
+//!                 if state.get(key) != Some(value.as_str()) {
 //!                     weight
 //!                 } else {
 //!                     0.0
@@ -184,16 +184,16 @@ use std::collections::{BinaryHeap, HashSet};
 ///
 /// // Example of using a search algorithm
 /// let mut action1 = Action::new("pickup_axe", 1.0).unwrap();
-/// action1.preconditions.set("axe_available", true);
-/// action1.effects.set("has_axe", true);
+/// action1.preconditions.set("axe_available", "true".to_string());
+/// action1.effects.set("has_axe", "true".to_string());
 ///
 /// let mut actions = vec![action1];
 ///
 /// let mut initial = State::new();
-/// initial.set("axe_available", true);
+/// initial.set("axe_available", "true".to_string());
 ///
 /// let mut goal = State::new();
-/// goal.set("has_axe", true);
+/// goal.set("has_axe", "true".to_string());
 ///
 /// let search = SimpleSearchAlgorithm;
 /// let plan = search.search(&actions, &initial, &goal).unwrap();
@@ -252,12 +252,12 @@ pub trait SearchAlgorithm {
 ///
 /// // Usage with states
 /// let mut current = State::new();
-/// current.set("has_axe", true);
+/// current.set("has_axe", "true".to_string());
 ///
 /// let mut goal = State::new();
-/// goal.set("has_axe", true);
-/// goal.set("has_wood", true);
-/// goal.set("at_camp", true);
+/// goal.set("has_axe", "true".to_string());
+/// goal.set("has_wood", "true".to_string());
+/// goal.set("at_camp", "true".to_string());
 ///
 /// let heuristic = MissingKeysHeuristic;
 /// let estimate = heuristic.calculate(&current, &goal);
@@ -292,13 +292,13 @@ pub trait HeuristicStrategy: Send + Sync {
 /// use goaprs::{DefaultHeuristic, HeuristicStrategy, State};
 ///
 /// let mut current = State::new();
-/// current.set("has_axe", true);
-/// current.set("at_forest", false);
+/// current.set("has_axe", "true".to_string());
+/// current.set("at_forest", "false".to_string());
 ///
 /// let mut goal = State::new();
-/// goal.set("has_axe", true);
-/// goal.set("at_forest", true);
-/// goal.set("has_wood", true);
+/// goal.set("has_axe", "true".to_string());
+/// goal.set("at_forest", "true".to_string());
+/// goal.set("has_wood", "true".to_string());
 ///
 /// let heuristic = DefaultHeuristic;
 /// let distance = heuristic.calculate(&current, &goal);
@@ -311,7 +311,7 @@ impl HeuristicStrategy for DefaultHeuristic {
         // Count the number of unsatisfied conditions
         goal.values()
             .iter()
-            .filter(|(key, &value)| state.get(key) != Some(value))
+            .filter(|(key, value)| state.get(key) != Some(value.as_str()))
             .count() as f32
     }
 }
@@ -328,10 +328,10 @@ impl HeuristicStrategy for DefaultHeuristic {
 /// use goaprs::{ZeroHeuristic, HeuristicStrategy, State};
 ///
 /// let mut state1 = State::new();
-/// state1.set("position", true);
+/// state1.set("position", "true".to_string());
 ///
 /// let mut state2 = State::new();
-/// state2.set("position", false);
+/// state2.set("position", "false".to_string());
 ///
 /// let heuristic = ZeroHeuristic;
 /// let estimate = heuristic.calculate(&state1, &state2);
@@ -587,28 +587,28 @@ impl SearchContext {
 ///
 /// // Create our actions
 /// let mut move_to_forest = Action::new("move_to_forest", 2.0).unwrap();
-/// move_to_forest.preconditions.set("at_home", true);
-/// move_to_forest.effects.set("at_forest", true);
-/// move_to_forest.effects.set("at_home", false);
+/// move_to_forest.preconditions.set("at_home", "true".to_string());
+/// move_to_forest.effects.set("at_forest", "true".to_string());
+/// move_to_forest.effects.set("at_home", "false".to_string());
 ///
 /// let mut collect_wood = Action::new("collect_wood", 3.0).unwrap();
-/// collect_wood.preconditions.set("at_forest", true);
-/// collect_wood.effects.set("has_wood", true);
+/// collect_wood.preconditions.set("at_forest", "true".to_string());
+/// collect_wood.effects.set("has_wood", "true".to_string());
 ///
 /// let mut move_to_home = Action::new("move_to_home", 2.0).unwrap();
-/// move_to_home.preconditions.set("at_forest", true);
-/// move_to_home.effects.set("at_home", true);
-/// move_to_home.effects.set("at_forest", false);
+/// move_to_home.preconditions.set("at_forest", "true".to_string());
+/// move_to_home.effects.set("at_home", "true".to_string());
+/// move_to_home.effects.set("at_forest", "false".to_string());
 ///
 /// // Create our starting state
 /// let mut initial = State::new();
-/// initial.set("at_home", true);
-/// initial.set("has_wood", false);
+/// initial.set("at_home", "true".to_string());
+/// initial.set("has_wood", "false".to_string());
 ///
 /// // Define our goal
 /// let mut goal = State::new();
-/// goal.set("at_home", true);
-/// goal.set("has_wood", true);
+/// goal.set("at_home", "true".to_string());
+/// goal.set("has_wood", "true".to_string());
 ///
 /// // Use A* to find a plan
 /// let astar = AStarSearch::default();
@@ -706,7 +706,7 @@ impl SearchAlgorithm for AStarSearch {
             if goal_state
                 .values()
                 .iter()
-                .all(|(k, v)| node.state.get(k) == Some(*v))
+                .all(|(k, v)| node.state.get(k) == Some(v.as_str()))
             {
                 return Ok(context.reconstruct_path(current_idx));
             }
@@ -747,21 +747,21 @@ impl SearchAlgorithm for AStarSearch {
 ///
 /// // Create actions for a simple GOAP scenario
 /// let mut pickup_wood = Action::new("pickup_wood", 1.0).unwrap();
-/// pickup_wood.preconditions.set("near_wood", true);
-/// pickup_wood.effects.set("has_wood", true);
+/// pickup_wood.preconditions.set("near_wood", "true".to_string());
+/// pickup_wood.effects.set("has_wood", "true".to_string());
 ///
 /// let mut go_to_wood = Action::new("go_to_wood", 2.0).unwrap();
-/// go_to_wood.preconditions.set("at_home", true);
-/// go_to_wood.effects.set("near_wood", true);
-/// go_to_wood.effects.set("at_home", false);
+/// go_to_wood.preconditions.set("at_home", "true".to_string());
+/// go_to_wood.effects.set("near_wood", "true".to_string());
+/// go_to_wood.effects.set("at_home", "false".to_string());
 ///
 /// // Initial state - we're at home
 /// let mut initial = State::new();
-/// initial.set("at_home", true);
+/// initial.set("at_home", "true".to_string());
 ///
 /// // Goal state - we want wood
 /// let mut goal = State::new();
-/// goal.set("has_wood", true);
+/// goal.set("has_wood", "true".to_string());
 ///
 /// // Use Dijkstra to find a plan
 /// let dijkstra = DijkstraSearch::default();
@@ -802,8 +802,8 @@ mod tests {
     fn make_action(
         name: &str,
         cost: f32,
-        pre: Vec<(&str, bool)>,
-        eff: Vec<(&str, bool)>,
+        pre: Vec<(&str, &str)>,
+        eff: Vec<(&str, &str)>,
     ) -> Action {
         let mut action = Action::new(name, cost).unwrap();
         for (k, v) in pre {
@@ -817,15 +817,15 @@ mod tests {
 
     #[test]
     fn test_astar_search() {
-        let a = make_action("a", 1.0, vec![("start", true)], vec![("goal", true)]);
-        let b = make_action("b", 5.0, vec![("start", true)], vec![("goal", true)]);
+        let a = make_action("a", 1.0, vec![("start", "true")], vec![("goal", "true")]);
+        let b = make_action("b", 5.0, vec![("start", "true")], vec![("goal", "true")]);
         let actions = vec![a.clone(), b.clone()];
 
         let mut initial = State::new();
-        initial.set("start", true);
+        initial.set("start", "true");
 
         let mut goal = State::new();
-        goal.set("goal", true);
+        goal.set("goal", "true");
 
         let astar = AStarSearch::default();
         let plan = astar.search(&actions, &initial, &goal).unwrap();
@@ -835,15 +835,15 @@ mod tests {
 
     #[test]
     fn test_dijkstra_search() {
-        let a = make_action("a", 1.0, vec![("start", true)], vec![("goal", true)]);
-        let b = make_action("b", 5.0, vec![("start", true)], vec![("goal", true)]);
+        let a = make_action("a", 1.0, vec![("start", "true")], vec![("goal", "true")]);
+        let b = make_action("b", 5.0, vec![("start", "true")], vec![("goal", "true")]);
         let actions = vec![a.clone(), b.clone()];
 
         let mut initial = State::new();
-        initial.set("start", true);
+        initial.set("start", "true");
 
         let mut goal = State::new();
-        goal.set("goal", true);
+        goal.set("goal", "true");
 
         let dijkstra = DijkstraSearch::default();
         let plan = dijkstra.search(&actions, &initial, &goal).unwrap();
@@ -857,24 +857,24 @@ mod tests {
         let action1 = make_action(
             "action1",
             1.0,
-            vec![("condition1", true)],
-            vec![("condition2", true)],
+            vec![("condition1", "true")],
+            vec![("condition2", "true")],
         );
         let action2 = make_action(
             "action2",
             1.0,
-            vec![("condition2", true)],
-            vec![("goal", true)],
+            vec![("condition2", "true")],
+            vec![("goal", "true")],
         );
 
         let actions = vec![action1.clone(), action2.clone()];
 
         // Set up initial and goal states
         let mut initial = State::new();
-        initial.set("condition1", true);
+        initial.set("condition1", "true");
 
         let mut goal = State::new();
-        goal.set("goal", true);
+        goal.set("goal", "true");
 
         // Test A* search
         let astar = AStarSearch::default();

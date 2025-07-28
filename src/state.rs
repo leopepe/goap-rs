@@ -16,7 +16,7 @@
 //! ## Core Features
 //!
 //! The `State` structure provides:
-//! - Simple key-value storage for boolean conditions
+//! - Simple key-value storage for string-based state values
 //! - Methods to check if one state satisfies another
 //! - Ability to apply effects from one state to another
 //! - Convenient access to the underlying state values
@@ -28,13 +28,13 @@
 //!
 //! // Create states for a game agent
 //! let mut current_state = State::new();
-//! current_state.set("has_weapon", true);
-//! current_state.set("at_destination", false);
-//! current_state.set("health", true);  // health is good
+//! current_state.set("has_weapon", "sword");
+//! current_state.set("at_destination", "false");
+//! current_state.set("health", "100");
 //!
 //! // Define a goal state - what the agent wants to achieve
 //! let mut goal_state = State::new();
-//! goal_state.set("at_destination", true);
+//! goal_state.set("at_destination", "true");
 //!
 //! // Check if the current state satisfies the goal (it doesn't yet)
 //! if !current_state.satisfies(&goal_state) {
@@ -43,15 +43,15 @@
 //!
 //! // Define effects of a "move" action
 //! let mut move_effects = State::new();
-//! move_effects.set("at_destination", true);
-//! move_effects.set("health", false);  // movement depletes health
+//! move_effects.set("at_destination", "true");
+//! move_effects.set("health", "80");  // movement depletes health
 //!
 //! // Apply the effects to the current state (simulating performing the action)
 //! current_state.apply_effects(&move_effects);
 //!
 //! // Now the goal is satisfied
 //! assert!(current_state.satisfies(&goal_state));
-//! assert_eq!(current_state.get("health"), Some(false));  // but health was depleted
+//! assert_eq!(current_state.get("health"), Some("80"));  // health was depleted
 //! ```
 
 use std::collections::HashMap;
@@ -60,7 +60,7 @@ use std::collections::HashMap;
 ///
 /// A `State` is a collection of key-value pairs where:
 /// - Keys are strings representing state variables
-/// - Values are booleans representing whether conditions are true or false
+/// - Values are strings representing the state values
 ///
 /// States are used to represent the current world state, action preconditions,
 /// action effects, and goal states in the GOAP system.
@@ -83,21 +83,21 @@ use std::collections::HashMap;
 /// let mut state = State::new();
 ///
 /// // Set state variables
-/// state.set("player_has_key", true);
-/// state.set("door_is_open", false);
+/// state.set("player_has_key", "golden_key");
+/// state.set("door_is_open", "false");
 ///
 /// // Check state variables
-/// assert_eq!(state.get("player_has_key"), Some(true));
-/// assert_eq!(state.get("door_is_open"), Some(false));
+/// assert_eq!(state.get("player_has_key"), Some("golden_key"));
+/// assert_eq!(state.get("door_is_open"), Some("false"));
 /// assert_eq!(state.get("non_existent_variable"), None);
 /// ```
 #[derive(Debug, Clone, PartialEq)]
 pub struct State {
     /// The state values as key-value pairs
     #[cfg(not(test))]
-    values: HashMap<String, bool>,
+    values: HashMap<String, String>,
     #[cfg(test)]
-    pub values: HashMap<String, bool>,
+    pub values: HashMap<String, String>,
 }
 
 impl State {
@@ -135,12 +135,12 @@ impl State {
     ///
     /// This method adds a new key-value pair to the state or updates an existing value.
     /// Keys are typically descriptive strings representing world conditions, and values
-    /// are booleans indicating whether those conditions are true or false.
+    /// are strings indicating the state of those conditions.
     ///
     /// # Arguments
     ///
     /// * `key` - The state variable name (automatically converted to String)
-    /// * `value` - The boolean value to set (true/false)
+    /// * `value` - The string value to set
     ///
     /// # Examples
     ///
@@ -150,21 +150,21 @@ impl State {
     /// let mut state = State::new();
     ///
     /// // Setting initial values
-    /// state.set("has_ammo", true);
-    /// state.set("enemy_visible", false);
+    /// state.set("has_ammo", "30");
+    /// state.set("enemy_visible", "false");
     ///
     /// // Updating an existing value
-    /// state.set("has_ammo", false); // Ammo has been used
+    /// state.set("has_ammo", "25"); // Ammo has been used
     ///
-    /// assert_eq!(state.get("has_ammo"), Some(false));
+    /// assert_eq!(state.get("has_ammo"), Some("25"));
     /// ```
-    pub fn set(&mut self, key: impl Into<String>, value: bool) {
-        self.values.insert(key.into(), value);
+    pub fn set(&mut self, key: impl Into<String>, value: impl Into<String>) {
+        self.values.insert(key.into(), value.into());
     }
 
     /// Gets the value for a state variable.
     ///
-    /// Retrieves the boolean value associated with the specified key, or `None`
+    /// Retrieves the string value associated with the specified key, or `None`
     /// if the key doesn't exist in the state.
     ///
     /// # Arguments
@@ -173,7 +173,7 @@ impl State {
     ///
     /// # Returns
     ///
-    /// * `Some(bool)` - The value associated with the key if it exists
+    /// * `Some(&str)` - The value associated with the key if it exists
     /// * `None` - If the key doesn't exist in the state
     ///
     /// # Examples
@@ -182,20 +182,21 @@ impl State {
     /// use goaprs::State;
     ///
     /// let mut state = State::new();
-    /// state.set("door_locked", true);
+    /// state.set("door_locked", "true");
     ///
     /// // Checking known values
-    /// assert_eq!(state.get("door_locked"), Some(true));
+    /// assert_eq!(state.get("door_locked"), Some("true"));
     ///
     /// // Handling missing values
     /// match state.get("window_open") {
-    ///     Some(true) => println!("Window is open"),
-    ///     Some(false) => println!("Window is closed"),
+    ///     Some("true") => println!("Window is open"),
+    ///     Some("false") => println!("Window is closed"),
+    ///     Some(value) => println!("Window state: {}", value),
     ///     None => println!("Unknown window state")
     /// }
     /// ```
-    pub fn get(&self, key: &str) -> Option<bool> {
-        self.values.get(key).copied()
+    pub fn get(&self, key: &str) -> Option<&str> {
+        self.values.get(key).map(|s| s.as_str())
     }
 
     /// Checks if this state satisfies another state's requirements.
@@ -225,21 +226,21 @@ impl State {
     ///
     /// // Current world state
     /// let mut world_state = State::new();
-    /// world_state.set("has_key", true);
-    /// world_state.set("door_open", false);
-    /// world_state.set("has_weapon", true);
+    /// world_state.set("has_key", "true");
+    /// world_state.set("door_open", "false");
+    /// world_state.set("has_weapon", "sword");
     ///
     /// // Goal state - just need the door to be open
     /// let mut goal_state = State::new();
-    /// goal_state.set("door_open", true);
+    /// goal_state.set("door_open", "true");
     ///
     /// // Check if goal is satisfied (it's not yet)
     /// assert!(!world_state.satisfies(&goal_state));
     ///
     /// // Action preconditions - need a key to open the door
     /// let mut unlock_preconditions = State::new();
-    /// unlock_preconditions.set("has_key", true);
-    /// unlock_preconditions.set("door_open", false);
+    /// unlock_preconditions.set("has_key", "true");
+    /// unlock_preconditions.set("door_open", "false");
     ///
     /// // Check if action can be performed (preconditions are satisfied)
     /// assert!(world_state.satisfies(&unlock_preconditions));
@@ -248,7 +249,7 @@ impl State {
         other
             .values
             .iter()
-            .all(|(key, &value)| self.values.get(key).map_or(false, |&v| v == value))
+            .all(|(key, value)| self.values.get(key).map_or(false, |v| v == value))
     }
 
     /// Applies the effects of another state to this state.
@@ -267,24 +268,24 @@ impl State {
     ///
     /// // Create an initial state
     /// let mut state = State::new();
-    /// state.set("has_key", false);
-    /// state.set("door_open", false);
+    /// state.set("has_key", "false");
+    /// state.set("door_open", "false");
     ///
     /// // Create effects to apply
     /// let mut effects = State::new();
-    /// effects.set("has_key", true);  // This will change
-    /// effects.set("inventory_full", true);  // This will be added
+    /// effects.set("has_key", "true");  // This will change
+    /// effects.set("inventory_full", "true");  // This will be added
     ///
     /// // Apply the effects
     /// state.apply_effects(&effects);
     ///
     /// // Verify changes
-    /// assert_eq!(state.get("has_key"), Some(true));  // Changed
-    /// assert_eq!(state.get("door_open"), Some(false));  // Unchanged
-    /// assert_eq!(state.get("inventory_full"), Some(true));  // Added
+    /// assert_eq!(state.get("has_key"), Some("true"));  // Changed
+    /// assert_eq!(state.get("door_open"), Some("false"));  // Unchanged
+    /// assert_eq!(state.get("inventory_full"), Some("true"));  // Added
     /// ```
     pub fn apply_effects(&mut self, effects: &Self) {
-        for (key, &value) in effects.values.iter() {
+        for (key, value) in effects.values.iter() {
             self.set(key, value);
         }
     }
@@ -306,9 +307,9 @@ impl State {
     /// use goaprs::State;
     ///
     /// let mut state = State::new();
-    /// state.set("position_x", true);
-    /// state.set("position_y", false);
-    /// state.set("has_weapon", true);
+    /// state.set("position_x", "10");
+    /// state.set("position_y", "20");
+    /// state.set("has_weapon", "sword");
     ///
     /// // Access all state values
     /// let values = state.values();
@@ -317,15 +318,15 @@ impl State {
     /// assert!(values.contains_key("position_y"));
     ///
     /// // Iterate through all state conditions
-    /// for (key, &value) in values.iter() {
-    ///     println!("Condition '{}' is {}", key, if value { "true" } else { "false" });
+    /// for (key, value) in values.iter() {
+    ///     println!("Condition '{}' has value '{}'", key, value);
     /// }
     ///
-    /// // Count how many conditions are true
-    /// let true_count = values.values().filter(|&&v| v).count();
-    /// assert_eq!(true_count, 2); // position_x and has_weapon are true
+    /// // Count how many conditions have a specific value
+    /// let sword_count = values.values().filter(|&v| v == "sword").count();
+    /// assert_eq!(sword_count, 1); // has_weapon is "sword"
     /// ```
-    pub fn values(&self) -> &HashMap<String, bool> {
+    pub fn values(&self) -> &HashMap<String, String> {
         &self.values
     }
 }
@@ -352,8 +353,8 @@ impl State {
 ///
 /// // Create with default and then modify
 /// let mut player_state = State::default();
-/// player_state.set("health", true);
-/// player_state.set("has_weapon", false);
+/// player_state.set("health", "100");
+/// player_state.set("has_weapon", "false");
 /// ```
 impl Default for State {
     fn default() -> Self {
@@ -374,44 +375,44 @@ mod tests {
     #[test]
     fn test_set_and_get() {
         let mut state = State::new();
-        state.set("foo", true);
-        assert_eq!(state.get("foo"), Some(true));
-        state.set("foo", false);
-        assert_eq!(state.get("foo"), Some(false));
+        state.set("foo", "true");
+        assert_eq!(state.get("foo"), Some("true"));
+        state.set("foo", "false");
+        assert_eq!(state.get("foo"), Some("false"));
         assert_eq!(state.get("bar"), None);
     }
 
     #[test]
     fn test_satisfies() {
         let mut state = State::new();
-        state.set("a", true);
-        state.set("b", false);
+        state.set("a", "true");
+        state.set("b", "false");
 
         let mut required = State::new();
-        required.set("a", true);
+        required.set("a", "true");
         assert!(state.satisfies(&required));
-        required.set("b", false);
+        required.set("b", "false");
         assert!(state.satisfies(&required));
-        required.set("b", true);
+        required.set("b", "true");
         assert!(!state.satisfies(&required));
-        required.set("c", true);
+        required.set("c", "true");
         assert!(!state.satisfies(&required));
     }
 
     #[test]
     fn test_apply_effects() {
         let mut state = State::new();
-        state.set("x", false);
-        state.set("y", false);
+        state.set("x", "false");
+        state.set("y", "false");
 
         let mut effects = State::new();
-        effects.set("x", true);
-        effects.set("z", true);
+        effects.set("x", "true");
+        effects.set("z", "true");
 
         state.apply_effects(&effects);
-        assert_eq!(state.get("x"), Some(true));
-        assert_eq!(state.get("y"), Some(false));
-        assert_eq!(state.get("z"), Some(true));
+        assert_eq!(state.get("x"), Some("true"));
+        assert_eq!(state.get("y"), Some("false"));
+        assert_eq!(state.get("z"), Some("true"));
     }
 
     #[test]

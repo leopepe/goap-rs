@@ -22,21 +22,21 @@
 //! let mut chop_wood = Action::new("chop_wood", 2.0).unwrap();
 //!
 //! // Define preconditions
-//! chop_wood.preconditions.set("has_axe", true);
-//! chop_wood.preconditions.set("near_tree", true);
+//! chop_wood.preconditions.set("has_axe", "true");
+//! chop_wood.preconditions.set("near_tree", "true");
 //!
 //! // Define effects
-//! chop_wood.effects.set("has_wood", true);
+//! chop_wood.effects.set("has_wood", "true");
 //!
 //! // Check if the action can be performed in the current state
 //! let mut current_state = State::new();
-//! current_state.set("has_axe", true);
-//! current_state.set("near_tree", true);
+//! current_state.set("has_axe", "true");
+//! current_state.set("near_tree", "true");
 //!
 //! if chop_wood.can_perform(&current_state) {
 //!     // Apply effects to update the world state
 //!     chop_wood.apply_effects(&mut current_state);
-//!     assert!(current_state.get("has_wood") == Some(true));
+//!     assert!(current_state.get("has_wood") == Some("true"));
 //! }
 //! ```
 //!
@@ -81,9 +81,9 @@
 //!         let mut base = Action::new("chop_wood", 2.0)?;
 //!
 //!         // Define preconditions and effects
-//!         base.preconditions.set("has_axe", true);
-//!         base.preconditions.set("near_tree", true);
-//!         base.effects.set("has_wood", true);
+//!         base.preconditions.set("has_axe", "true");
+//!         base.preconditions.set("near_tree", "true");
+//!         base.effects.set("has_wood", "true");
 //!
 //!         Ok(Self { base })
 //!     }
@@ -337,17 +337,17 @@ impl fmt::Display for ActionResponse {
 /// let mut action = Action::new("move_to_target", 1.5).unwrap();
 ///
 /// // Add preconditions - what must be true to perform this action
-/// action.preconditions.set("has_map", true);
-/// action.preconditions.set("target_visible", true);
+/// action.preconditions.set("has_map", "true");
+/// action.preconditions.set("target_visible", "true");
 ///
 /// // Add effects - what changes after performing this action
-/// action.effects.set("at_target", true);
-/// action.effects.set("energy", false); // Using energy
+/// action.effects.set("at_target", "true");
+/// action.effects.set("energy", "false"); // Using energy
 ///
 /// // Check if the action can be performed in the current state
 /// let mut state = State::new();
-/// state.set("has_map", true);
-/// state.set("target_visible", true);
+/// state.set("has_map", "true");
+/// state.set("target_visible", "true");
 /// assert!(action.can_perform(&state));
 /// ```
 #[derive(Debug, Clone)]
@@ -424,19 +424,19 @@ impl Action {
     /// use goaprs::{Action, State};
     ///
     /// let mut action = Action::new("pick_up", 1.0).unwrap();
-    /// action.preconditions.set("item_visible", true);
-    /// action.preconditions.set("hands_free", true);
+    /// action.preconditions.set("item_visible", "true");
+    /// action.preconditions.set("hands_free", "true");
     ///
     /// // State that satisfies all preconditions
     /// let mut valid_state = State::new();
-    /// valid_state.set("item_visible", true);
-    /// valid_state.set("hands_free", true);
+    /// valid_state.set("item_visible", "true");
+    /// valid_state.set("hands_free", "true");
     /// assert!(action.can_perform(&valid_state));
     ///
     /// // State that doesn't satisfy all preconditions
     /// let mut invalid_state = State::new();
-    /// invalid_state.set("item_visible", true);
-    /// invalid_state.set("hands_free", false);
+    /// invalid_state.set("item_visible", "true");
+    /// invalid_state.set("hands_free", "false");
     /// assert!(!action.can_perform(&invalid_state));
     /// ```
     pub fn can_perform(&self, state: &State) -> bool {
@@ -459,20 +459,20 @@ impl Action {
     /// use goaprs::{Action, State};
     ///
     /// let mut action = Action::new("pick_up_item", 1.0).unwrap();
-    /// action.effects.set("has_item", true);
-    /// action.effects.set("hands_free", false);
+    /// action.effects.set("has_item", "true");
+    /// action.effects.set("hands_free", "false");
     ///
     /// let mut state = State::new();
-    /// state.set("hands_free", true);
-    /// state.set("item_visible", true);
+    /// state.set("hands_free", "true");
+    /// state.set("item_visible", "true");
     ///
     /// // Apply the effects of the action
     /// action.apply_effects(&mut state);
     ///
     /// // Verify the state was modified correctly
-    /// assert_eq!(state.get("has_item"), Some(true));
-    /// assert_eq!(state.get("hands_free"), Some(false));
-    /// assert_eq!(state.get("item_visible"), Some(true)); // Unchanged
+    /// assert_eq!(state.get("has_item"), Some("true"));
+    /// assert_eq!(state.get("hands_free"), Some("false"));
+    /// assert_eq!(state.get("item_visible"), Some("true")); // Unchanged
     /// ```
     pub fn apply_effects(&self, state: &mut State) {
         state.apply_effects(&self.effects);
@@ -528,10 +528,10 @@ mod tests {
     #[test]
     fn test_can_perform_with_matching_preconditions() {
         let mut action = Action::new("test_action", 1.0).unwrap();
-        action.preconditions.set("has_tool", true);
+        action.preconditions.set("has_tool", "true");
 
         let mut state = State::new();
-        state.set("has_tool", true);
+        state.set("has_tool", "true");
 
         assert!(action.can_perform(&state));
     }
@@ -539,10 +539,10 @@ mod tests {
     #[test]
     fn test_can_perform_with_unmatching_preconditions() {
         let mut action = Action::new("test_action", 1.0).unwrap();
-        action.preconditions.set("has_tool", true);
+        action.preconditions.set("has_tool", "true");
 
         let mut state = State::new();
-        state.set("has_tool", false);
+        state.set("has_tool", "false");
 
         assert!(!action.can_perform(&state));
     }
@@ -550,7 +550,7 @@ mod tests {
     #[test]
     fn test_can_perform_with_missing_preconditions() {
         let mut action = Action::new("test_action", 1.0).unwrap();
-        action.preconditions.set("has_tool", true);
+        action.preconditions.set("has_tool", "true");
 
         let state = State::new();
         assert!(!action.can_perform(&state));
@@ -567,36 +567,36 @@ mod tests {
     #[test]
     fn test_apply_effects_single() {
         let mut action = Action::new("test_action", 1.0).unwrap();
-        action.effects.set("has_result", true);
+        action.effects.set("has_result", "true");
 
         let mut state = State::new();
         action.apply_effects(&mut state);
 
-        assert_eq!(state.get("has_result"), Some(true));
+        assert_eq!(state.get("has_result"), Some("true"));
     }
 
     #[test]
     fn test_apply_effects_multiple() {
         let mut action = Action::new("test_action", 1.0).unwrap();
-        action.effects.set("has_result", true);
-        action.effects.set("is_complete", true);
+        action.effects.set("has_result", "true");
+        action.effects.set("is_complete", "true");
 
         let mut state = State::new();
         action.apply_effects(&mut state);
 
-        assert_eq!(state.get("has_result"), Some(true));
-        assert_eq!(state.get("is_complete"), Some(true));
+        assert_eq!(state.get("has_result"), Some("true"));
+        assert_eq!(state.get("is_complete"), Some("true"));
     }
 
     #[test]
     fn test_apply_effects_overwrite() {
         let mut action = Action::new("test_action", 1.0).unwrap();
-        action.effects.set("has_result", true);
+        action.effects.set("has_result", "true");
 
         let mut state = State::new();
-        state.set("has_result", false);
+        state.set("has_result", "false");
         action.apply_effects(&mut state);
 
-        assert_eq!(state.get("has_result"), Some(true));
+        assert_eq!(state.get("has_result"), Some("true"));
     }
 }

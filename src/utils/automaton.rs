@@ -528,12 +528,12 @@ impl Automaton {
         // Convert HashMaps to State objects
         let mut current_state = crate::state::State::new();
         for (k, v) in world_hash.iter() {
-            current_state.set(k, v == "true");
+            current_state.set(k, v);
         }
 
         let mut goal_state = crate::state::State::new();
         for (k, v) in goal_hash.iter() {
-            goal_state.set(k, v == "true");
+            goal_state.set(k, v);
         }
 
         // Generate plan
@@ -1009,10 +1009,10 @@ mod tests {
         // Create a test action with the conditions and effects
         let mut test_action = Action::new("test_action", 1.0).unwrap();
         for (key, value) in conditions {
-            test_action.preconditions.set(&key, value == "true");
+            test_action.preconditions.set(&key, value.clone());
         }
         for (key, value) in effects {
-            test_action.effects.set(&key, value == "true");
+            test_action.effects.set(&key, value.clone());
         }
         actions.push(test_action);
 

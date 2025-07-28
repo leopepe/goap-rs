@@ -23,9 +23,10 @@ actix = "0.13.0"                                       # Actix actor framework
 tempfile = "3.8.0"                                     # Temporary file creation
 
 [dev-dependencies]
-criterion = "0.5.1"   # Benchmarking
-mockall = "0.11.4"    # Mocking
-aws-sdk-s3 = "0.28.0" # used in examples/aws_s3_action.rs
+criterion = "0.5.1"    # Benchmarking
+mockall = "0.11.4"     # Mocking
+aws-sdk-s3 = "1.100.0"
+aws-config = "1.8.3"
 
 [profile.release]
 debug = true

@@ -1,7 +1,133 @@
+//! # Action Module for Goal-Oriented Action Planning (GOAP)
+//!
+//! This module provides the core action components for a GOAP system.
+//!
+//! ## What is GOAP?
+//!
+//! Goal-Oriented Action Planning (GOAP) is an AI planning architecture that allows agents
+//! to create sequences of actions to accomplish goals. Unlike finite state machines or behavior trees,
+//! GOAP dynamically generates plans based on the current world state and available actions.
+//!
+//! ## Key Components
+//!
+//! * `Action`: Represents a single action with preconditions, effects, and a cost
+//! * `ActionResponse`: Contains the result of an action's execution
+//!
+//! ## Basic Usage
+//!
+//! ```
+//! use goaprs::{Action, State};
+//!
+//! // Create actions for an agent
+//! let mut chop_wood = Action::new("chop_wood", 2.0).unwrap();
+//!
+//! // Define preconditions
+//! chop_wood.preconditions.set("has_axe", true);
+//! chop_wood.preconditions.set("near_tree", true);
+//!
+//! // Define effects
+//! chop_wood.effects.set("has_wood", true);
+//!
+//! // Check if the action can be performed in the current state
+//! let mut current_state = State::new();
+//! current_state.set("has_axe", true);
+//! current_state.set("near_tree", true);
+//!
+//! if chop_wood.can_perform(&current_state) {
+//!     // Apply effects to update the world state
+//!     chop_wood.apply_effects(&mut current_state);
+//!     assert!(current_state.get("has_wood") == Some(true));
+//! }
+//! ```
+//!
+//! ## Executing Actions
+//!
+//! Actions can be executed asynchronously using the `exec()` method:
+//!
+//! ```
+//! # async fn example() -> goaprs::Result<()> {
+//! # use goaprs::{Action, State};
+//! # let chop_wood = Action::new("chop_wood", 2.0).unwrap();
+//!
+//! // Execute the action
+//! let response = chop_wood.exec().await?;
+//!
+//! // Check if execution was successful
+//! if response.is_success() {
+//!     println!("Action succeeded: {}", response);
+//! } else {
+//!     eprintln!("Action failed: {}", response.stderr());
+//! }
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ## Custom Actions
+//!
+//! To create custom actions with real behavior, you can implement your own action types:
+//!
+//! ```
+//! use std::time::Duration;
+//! use goaprs::{Action, ActionResponse, GoapError, Result, State};
+//!
+//! // Create a custom action by extending the base Action
+//! #[derive(Debug, Clone)]
+//! struct ChopWoodAction {
+//!     base: Action,
+//! }
+//!
+//! impl ChopWoodAction {
+//!     pub fn new() -> Result<Self> {
+//!         let mut base = Action::new("chop_wood", 2.0)?;
+//!
+//!         // Define preconditions and effects
+//!         base.preconditions.set("has_axe", true);
+//!         base.preconditions.set("near_tree", true);
+//!         base.effects.set("has_wood", true);
+//!
+//!         Ok(Self { base })
+//!     }
+//!
+//!     // Override the exec method to provide custom implementation
+//!     pub async fn exec(&self) -> Result<ActionResponse> {
+//!         // Simulate some work
+//!         tokio::time::sleep(Duration::from_millis(100)).await;
+//!
+//!         // Return success response
+//!         Ok(ActionResponse::new(
+//!             format!("Chopped wood successfully with axe"),
+//!             String::new(),
+//!             0,
+//!         ))
+//!     }
+//! }
+//! ```
+
 use crate::{GoapError, Result, State};
 use std::fmt;
 
-/// Response from executing an action
+/// Response from executing an action in a GOAP system.
+///
+/// This struct encapsulates the result of an action's execution, including standard output,
+/// standard error, and a return code to indicate success or failure.
+///
+/// # Examples
+///
+/// ```
+/// use goaprs::ActionResponse;
+///
+/// // Create a successful response
+/// let success = ActionResponse::new("Wood chopped successfully".to_string(), String::new(), 0);
+/// assert!(success.is_success());
+///
+/// // Create a failed response
+/// let failure = ActionResponse::new(
+///     String::new(),
+///     "No axe available to chop wood".to_string(),
+///     1
+/// );
+/// assert!(!failure.is_success());
+/// ```
 #[derive(Debug, Clone)]
 pub struct ActionResponse {
     /// Standard output from the action execution
@@ -13,7 +139,26 @@ pub struct ActionResponse {
 }
 
 impl ActionResponse {
-    /// Creates a new action response
+    /// Creates a new action response with the provided stdout, stderr, and return code.
+    ///
+    /// # Arguments
+    ///
+    /// * `stdout` - Standard output text from the action execution
+    /// * `stderr` - Standard error text from the action execution
+    /// * `return_code` - Exit code (0 for success, non-zero for failure)
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use goaprs::ActionResponse;
+    ///
+    /// // Create a successful response
+    /// let response = ActionResponse::new(
+    ///     "Found 3 items".to_string(),
+    ///     String::new(),
+    ///     0
+    /// );
+    /// ```
     pub fn new(stdout: String, stderr: String, return_code: i32) -> Self {
         Self {
             stdout,
@@ -22,32 +167,153 @@ impl ActionResponse {
         }
     }
 
-    /// Gets the standard output from the action execution
+    /// Gets the standard output from the action execution.
+    ///
+    /// # Returns
+    ///
+    /// A string slice containing the standard output.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use goaprs::ActionResponse;
+    ///
+    /// let response = ActionResponse::new(
+    ///     "Operation completed".to_string(),
+    ///     "Warning: low resources".to_string(),
+    ///     0
+    /// );
+    ///
+    /// assert_eq!(response.stdout(), "Operation completed");
+    /// ```
     pub fn stdout(&self) -> &str {
         &self.stdout
     }
 
-    /// Gets the standard error from the action execution
+    /// Gets the standard error from the action execution.
+    ///
+    /// # Returns
+    ///
+    /// A string slice containing the standard error output.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use goaprs::ActionResponse;
+    ///
+    /// let response = ActionResponse::new(
+    ///     String::new(),
+    ///     "Error: resource not found".to_string(),
+    ///     1
+    /// );
+    ///
+    /// assert_eq!(response.stderr(), "Error: resource not found");
+    /// ```
     pub fn stderr(&self) -> &str {
         &self.stderr
     }
 
-    /// Gets the return code from the action execution
+    /// Gets the return code from the action execution.
+    ///
+    /// # Returns
+    ///
+    /// An integer representing the exit code of the action.
+    /// By convention, 0 indicates success and non-zero values indicate failure.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use goaprs::ActionResponse;
+    ///
+    /// let success = ActionResponse::new(
+    ///     "Success".to_string(),
+    ///     String::new(),
+    ///     0
+    /// );
+    ///
+    /// let failure = ActionResponse::new(
+    ///     String::new(),
+    ///     "Failure".to_string(),
+    ///     1
+    /// );
+    ///
+    /// assert_eq!(success.return_code(), 0);
+    /// assert_eq!(failure.return_code(), 1);
+    /// ```
     pub fn return_code(&self) -> i32 {
         self.return_code
     }
 
-    /// Gets a formatted response string
+    /// Gets a formatted response string, which is the standard output.
+    ///
+    /// This method is a convenience wrapper that returns a clone of the stdout.
+    ///
+    /// # Returns
+    ///
+    /// A String containing the standard output of the action execution.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use goaprs::ActionResponse;
+    ///
+    /// let response = ActionResponse::new(
+    ///     "Operation successful".to_string(),
+    ///     String::new(),
+    ///     0
+    /// );
+    ///
+    /// assert_eq!(response.response(), "Operation successful");
+    /// ```
     pub fn response(&self) -> String {
         self.stdout.clone()
     }
 
-    /// Checks if the action execution was successful
+    /// Checks if the action execution was successful.
+    ///
+    /// An action is considered successful if its return code is 0.
+    ///
+    /// # Returns
+    ///
+    /// `true` if the action was successful (return code is 0), otherwise `false`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use goaprs::ActionResponse;
+    ///
+    /// let success = ActionResponse::new(
+    ///     "Task completed".to_string(),
+    ///     String::new(),
+    ///     0
+    /// );
+    ///
+    /// let failure = ActionResponse::new(
+    ///     String::new(),
+    ///     "Error executing task".to_string(),
+    ///     1
+    /// );
+    ///
+    /// assert!(success.is_success());
+    /// assert!(!failure.is_success());
+    /// ```
     pub fn is_success(&self) -> bool {
         self.return_code == 0
     }
 }
 
+/// Implementation of Display trait for ActionResponse.
+///
+/// This allows ActionResponse to be printed directly, showing the stdout content.
+///
+/// # Examples
+///
+/// ```
+/// use goaprs::ActionResponse;
+///
+/// let response = ActionResponse::new("Hello, world!".to_string(), String::new(), 0);
+/// println!("{}", response); // Prints: Hello, world!
+/// ```
 impl fmt::Display for ActionResponse {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.stdout)

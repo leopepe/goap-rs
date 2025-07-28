@@ -19,6 +19,9 @@ flamegraph:
 release: test
 	cargo build --release
 
+publish: release
+    cargo publish --token ${CRATES_IO_TOKEN}
+
 .PHONY: docs
 docs: test
 	cargo doc --color always --no-deps

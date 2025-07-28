@@ -1,16 +1,17 @@
 .PHONY: all
-all: build
+
+all: format release
 
 lint:
-	cargo clippy
+	cargp fmt --check && cargo clippy
 
-fmt: lint
+format:
 	cargo fmt
 
-test: fmt
+test: lint
 	cargo test
 
-build: test
+build:
 	cargo build
 
 flamegraph:
@@ -20,7 +21,7 @@ release: test
 	cargo build --release
 
 publish: release
-    cargo publish --token ${CRATES_IO_TOKEN}
+	cargo publish --token ${CRATES_IO_TOKEN}
 
 .PHONY: docs
 docs: test

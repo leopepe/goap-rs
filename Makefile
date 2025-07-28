@@ -3,7 +3,7 @@
 all: format release
 
 lint:
-	cargp fmt --check && cargo clippy
+	cargo fmt --check && cargo clippy
 
 format:
 	cargo fmt

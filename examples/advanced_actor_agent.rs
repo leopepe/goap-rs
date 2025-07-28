@@ -73,19 +73,11 @@ impl SensorFn for TemperatureSensor {
 // Actions
 struct TurnHeaterOnAction {
     world_state: Arc<Mutex<WorldState>>,
-    id: &'static str,
 }
 
 impl TurnHeaterOnAction {
     fn new(world_state: Arc<Mutex<WorldState>>) -> Self {
-        Self {
-            world_state,
-            id: "TurnHeaterOnAction",
-        }
-    }
-
-    fn id(&self) -> &str {
-        self.id
+        Self { world_state }
     }
 }
 
@@ -101,19 +93,11 @@ impl ActionFn for TurnHeaterOnAction {
 
 struct TurnHeaterOffAction {
     world_state: Arc<Mutex<WorldState>>,
-    id: &'static str,
 }
 
 impl TurnHeaterOffAction {
     fn new(world_state: Arc<Mutex<WorldState>>) -> Self {
-        Self {
-            world_state,
-            id: "TurnHeaterOffAction",
-        }
-    }
-
-    fn id(&self) -> &str {
-        self.id
+        Self { world_state }
     }
 }
 
@@ -131,19 +115,11 @@ impl ActionFn for TurnHeaterOffAction {
 
 struct IncreaseTemperatureAction {
     world_state: Arc<Mutex<WorldState>>,
-    id: &'static str,
 }
 
 impl IncreaseTemperatureAction {
     fn new(world_state: Arc<Mutex<WorldState>>) -> Self {
-        Self {
-            world_state,
-            id: "IncreaseTemperatureAction",
-        }
-    }
-
-    fn id(&self) -> &str {
-        self.id
+        Self { world_state }
     }
 }
 

@@ -1,3 +1,64 @@
+//! # Planner Module for Goal-Oriented Action Planning (GOAP)
+//!
+//! The planner is the central component of a GOAP system, responsible for:
+//! - Finding optimal sequences of actions to achieve goals
+//! - Coordinating between world states and available actions
+//! - Using search algorithms to determine the best plan
+//!
+//! ## Overview
+//!
+//! Goal-Oriented Action Planning is a decision-making system that:
+//! 1. Starts with a current world state
+//! 2. Defines a goal state to achieve
+//! 3. Considers all available actions with their preconditions and effects
+//! 4. Finds the optimal sequence of actions to transform the current state into the goal state
+//!
+//! The `Planner` brings these components together by using search algorithms (like A*) to
+//! find efficient paths through the action space.
+//!
+//! ## Basic Usage
+//!
+//! ```
+//! use goaprs::{Action, Planner, State};
+//!
+//! // Step 1: Create actions that define what your agent can do
+//! let mut chop_tree = Action::new("chop_tree", 2.0).unwrap();
+//! chop_tree.preconditions.set("has_axe", true);
+//! chop_tree.effects.set("has_wood", true);
+//!
+//! let mut craft_axe = Action::new("craft_axe", 1.0).unwrap();
+//! craft_axe.preconditions.set("has_metal", true);
+//! craft_axe.effects.set("has_axe", true);
+//!
+//! let mut mine_ore = Action::new("mine_ore", 3.0).unwrap();
+//! mine_ore.preconditions.set("has_pickaxe", true);
+//! mine_ore.effects.set("has_metal", true);
+//!
+//! let mut craft_pickaxe = Action::new("craft_pickaxe", 1.0).unwrap();
+//! craft_pickaxe.preconditions.set("has_wood", true);
+//! craft_pickaxe.effects.set("has_pickaxe", true);
+//!
+//! // Step 2: Create a planner with all available actions
+//! let actions = vec![chop_tree, craft_axe, mine_ore, craft_pickaxe];
+//! let planner = Planner::new(actions);
+//!
+//! // Step 3: Define current state
+//! let mut current_state = State::new();
+//! current_state.set("has_wood", true); // We start with some wood
+//!
+//! // Step 4: Define goal state
+//! let mut goal_state = State::new();
+//! goal_state.set("has_metal", true); // We want to have metal
+//!
+//! // Step 5: Generate a plan
+//! let plan = planner.plan(&current_state, &goal_state).unwrap();
+//!
+//! // The planner will find: craft_pickaxe -> mine_ore
+//! for action in &plan {
+//!     println!("Action: {}", action.name);
+//! }
+//! ```
+
 use crate::search::{AStarSearch, SearchAlgorithm};
 use crate::{Action, Result, State};
 
@@ -44,6 +105,63 @@ use crate::{Action, Result, State};
 /// assert_eq!(plan[0].name, "go_to_store");
 /// assert_eq!(plan[1].name, "buy_food");
 /// ```
+/// The core planning component in a GOAP system.
+///
+/// A `Planner` is responsible for finding an optimal sequence of actions that will
+/// transform a current world state into a desired goal state. It maintains a collection
+/// of all available actions and uses a search algorithm to find the most efficient plan.
+///
+/// The planner represents the "brain" of a GOAP agent, making decisions about which actions
+/// to take and in what order to achieve goals most efficiently.
+///
+/// # Architecture
+///
+/// The `Planner` works with several other components:
+/// - `Action`: Represents things the agent can do, with preconditions and effects
+/// - `State`: Represents world states (current state and goal state)
+/// - `SearchAlgorithm`: Finds optimal paths through the action space (A* by default)
+///
+/// # Performance Considerations
+///
+/// - The efficiency of planning depends on the number of available actions
+/// - More complex action interdependencies can lead to longer planning times
+/// - Using a good heuristic with A* search can dramatically improve performance
+///
+/// # Examples
+///
+/// Basic usage with default A* search:
+///
+/// ```
+/// use goaprs::{Action, Planner, State};
+///
+/// // Define actions for a cooking agent
+/// let mut get_ingredients = Action::new("get_ingredients", 1.0).unwrap();
+/// get_ingredients.preconditions.set("has_money", true);
+/// get_ingredients.effects.set("has_ingredients", true);
+///
+/// let mut cook_meal = Action::new("cook_meal", 2.0).unwrap();
+/// cook_meal.preconditions.set("has_ingredients", true);
+/// cook_meal.effects.set("has_meal", true);
+///
+/// // Create a planner with these actions
+/// let planner = Planner::new(vec![get_ingredients, cook_meal]);
+///
+/// // Define current state - we have money but no ingredients
+/// let mut current_state = State::new();
+/// current_state.set("has_money", true);
+///
+/// // Define goal state - we want a meal
+/// let mut goal_state = State::new();
+/// goal_state.set("has_meal", true);
+///
+/// // Generate a plan
+/// let plan = planner.plan(&current_state, &goal_state).unwrap();
+///
+/// // The plan will be: get_ingredients -> cook_meal
+/// assert_eq!(plan.len(), 2);
+/// assert_eq!(plan[0].name, "get_ingredients");
+/// assert_eq!(plan[1].name, "cook_meal");
+/// ```
 pub struct Planner {
     /// Available actions that can be used in planning
     actions: Vec<Action>,
@@ -52,22 +170,60 @@ pub struct Planner {
 }
 
 impl Planner {
-    /// Creates a new planner with the given actions using A* search
+    /// Creates a new planner with the given actions using A* search algorithm.
+    ///
+    /// This constructor initializes a planner with the provided actions and the default
+    /// A* search algorithm, which is a good general-purpose choice for GOAP planning.
+    /// The A* algorithm efficiently finds optimal plans by using a heuristic to guide
+    /// the search process.
     ///
     /// # Arguments
     ///
     /// * `actions` - A vector of available actions to use for planning
     ///
+    /// # Returns
+    ///
+    /// A new `Planner` instance configured with the given actions and default A* search
+    ///
     /// # Examples
+    ///
+    /// Basic example with a single action:
     ///
     /// ```
     /// use goaprs::{Action, Planner};
     ///
+    /// // Create an action for moving to a destination
     /// let mut move_action = Action::new("move", 1.0).unwrap();
     /// move_action.preconditions.set("can_move", true);
     /// move_action.effects.set("at_destination", true);
     ///
+    /// // Create a planner with this action
     /// let planner = Planner::new(vec![move_action]);
+    /// ```
+    ///
+    /// Example with multiple interdependent actions:
+    ///
+    /// ```
+    /// use goaprs::{Action, Planner, State};
+    ///
+    /// // Create actions for a farming scenario
+    /// let mut till_soil = Action::new("till_soil", 2.0).unwrap();
+    /// till_soil.preconditions.set("has_hoe", true);
+    /// till_soil.effects.set("soil_prepared", true);
+    ///
+    /// let mut plant_seeds = Action::new("plant_seeds", 1.0).unwrap();
+    /// plant_seeds.preconditions.set("soil_prepared", true);
+    /// plant_seeds.preconditions.set("has_seeds", true);
+    /// plant_seeds.effects.set("plants_growing", true);
+    ///
+    /// let mut harvest_crops = Action::new("harvest_crops", 3.0).unwrap();
+    /// harvest_crops.preconditions.set("plants_growing", true);
+    /// harvest_crops.effects.set("has_food", true);
+    ///
+    /// // Create a planner with these farming actions
+    /// let farming_planner = Planner::new(vec![till_soil, plant_seeds, harvest_crops]);
+    ///
+    /// // Now this planner can be used to generate farming plans
     /// ```
     pub fn new(actions: Vec<Action>) -> Self {
         Self {
@@ -76,22 +232,77 @@ impl Planner {
         }
     }
 
-    /// Creates a new planner with the given actions and a custom search algorithm
+    /// Creates a new planner with the given actions and a custom search algorithm.
     ///
-    /// This allows you to use a different search algorithm than the default A* search.
+    /// This constructor gives you more control over how plans are generated by allowing
+    /// you to specify a custom search algorithm. Different algorithms may be better
+    /// suited for particular planning scenarios:
+    ///
+    /// - `AStarSearch`: Good general-purpose algorithm that uses a heuristic to find optimal plans efficiently
+    /// - `DijkstraSearch`: Finds optimal plans without using a heuristic, which may be more thorough but slower
+    /// - Custom algorithms: You can implement your own search algorithms for specialized needs
     ///
     /// # Arguments
     ///
     /// * `actions` - A vector of available actions to use for planning
     /// * `search_algorithm` - The search algorithm to use for finding plans
     ///
+    /// # Returns
+    ///
+    /// A new `Planner` instance configured with the given actions and search algorithm
+    ///
     /// # Examples
+    ///
+    /// Using Dijkstra's algorithm instead of A*:
     ///
     /// ```
     /// use goaprs::{Action, DijkstraSearch, Planner};
     ///
-    /// let actions = vec![Action::new("sample_action", 1.0).unwrap()];
+    /// // Create some actions
+    /// let pickup = Action::new("pickup", 1.0).unwrap();
+    /// let drop = Action::new("drop", 1.0).unwrap();
+    ///
+    /// // Create a planner with Dijkstra's algorithm
+    /// let actions = vec![pickup, drop];
     /// let planner = Planner::with_search_algorithm(actions, Box::new(DijkstraSearch));
+    /// ```
+    ///
+    /// Using a custom search algorithm:
+    ///
+    /// ```
+    /// use goaprs::{Action, GoapError, Result, SearchAlgorithm, State, Planner};
+    ///
+    /// // Define a custom search algorithm
+    /// struct CustomSearch;
+    ///
+    /// impl SearchAlgorithm for CustomSearch {
+    ///     fn search(
+    ///         &self,
+    ///         actions: &[Action],
+    ///         current_state: &State,
+    ///         goal_state: &State,
+    ///     ) -> Result<Vec<Action>> {
+    ///         // Simple greedy implementation
+    ///         let mut plan = Vec::new();
+    ///         let mut state = current_state.clone();
+    ///
+    ///         while !state.satisfies(goal_state) {
+    ///             // Find the first applicable action
+    ///             if let Some(action) = actions.iter().find(|a| a.can_perform(&state)) {
+    ///                 action.apply_effects(&mut state);
+    ///                 plan.push(action.clone());
+    ///             } else {
+    ///                 return Err(GoapError::NoPlanFound);
+    ///             }
+    ///         }
+    ///
+    ///         Ok(plan)
+    ///     }
+    /// }
+    ///
+    /// // Create planner with custom search
+    /// let actions = vec![Action::new("example", 1.0).unwrap()];
+    /// let planner = Planner::with_search_algorithm(actions, Box::new(CustomSearch));
     /// ```
     pub fn with_search_algorithm(
         actions: Vec<Action>,
@@ -141,12 +352,128 @@ impl Planner {
     /// let plan = planner.plan(&current_state, &goal_state).unwrap();
     /// assert_eq!(plan.len(), 1);
     /// ```
+    /// Finds a plan to achieve the goal state from the current state.
+    ///
+    /// This is the main method of the GOAP planner. It uses the configured search algorithm
+    /// to find the most efficient sequence of actions that will transform the current state
+    /// into the goal state.
+    ///
+    /// The planning process:
+    /// 1. Checks if the current state already satisfies the goal
+    /// 2. If not, searches through possible action sequences
+    /// 3. Evaluates different paths based on action costs
+    /// 4. Returns the optimal plan or an error if no plan is possible
+    ///
+    /// # Arguments
+    ///
+    /// * `current_state` - The starting state representing the current world conditions
+    /// * `goal_state` - The target state that the agent wants to achieve
+    ///
+    /// # Returns
+    ///
+    /// * `Ok(Vec<Action>)` - A sequence of actions that achieves the goal (empty if the goal is already satisfied)
+    /// * `Err(GoapError::NoPlanFound)` - If no valid plan can be found to achieve the goal
+    ///
+    /// # Errors
+    ///
+    /// Returns `GoapError::NoPlanFound` if no valid plan can be found to achieve the goal.
+    /// This can happen if:
+    /// - The goal contains conditions that no action can establish
+    /// - Actions exist that could achieve the goal, but their preconditions cannot be satisfied
+    /// - The action set forms a dependency cycle that prevents reaching the goal
+    ///
+    /// # Examples
+    ///
+    /// Finding a simple plan:
+    ///
+    /// ```
+    /// use goaprs::{Action, Planner, State};
+    ///
+    /// // Create a simple action
+    /// let mut action = Action::new("light_fire", 1.0).unwrap();
+    /// action.preconditions.set("has_matches", true);
+    /// action.effects.set("fire_lit", true);
+    ///
+    /// // Create planner
+    /// let planner = Planner::new(vec![action]);
+    ///
+    /// // Define states
+    /// let mut current_state = State::new();
+    /// current_state.set("has_matches", true);
+    ///
+    /// let mut goal_state = State::new();
+    /// goal_state.set("fire_lit", true);
+    ///
+    /// // Find plan
+    /// let plan = planner.plan(&current_state, &goal_state).unwrap();
+    /// assert_eq!(plan.len(), 1);
+    /// assert_eq!(plan[0].name, "light_fire");
+    /// ```
+    ///
+    /// Handling when no plan is possible:
+    ///
+    /// ```
+    /// use goaprs::{Action, GoapError, Planner, State};
+    ///
+    /// // Create an action that requires something we don't have
+    /// let mut action = Action::new("cook_meal", 1.0).unwrap();
+    /// action.preconditions.set("has_ingredients", true);
+    /// action.effects.set("has_food", true);
+    ///
+    /// let planner = Planner::new(vec![action]);
+    ///
+    /// // We don't have ingredients and no way to get them
+    /// let current_state = State::new();
+    ///
+    /// // We want food
+    /// let mut goal_state = State::new();
+    /// goal_state.set("has_food", true);
+    ///
+    /// // No plan should be possible
+    /// let result = planner.plan(&current_state, &goal_state);
+    /// assert!(matches!(result, Err(GoapError::NoPlanFound)));
+    /// ```
+    ///
+    /// When the goal is already satisfied:
+    ///
+    /// ```
+    /// use goaprs::{Action, Planner, State};
+    ///
+    /// let planner = Planner::new(vec![]);
+    ///
+    /// let mut state = State::new();
+    /// state.set("goal_met", true);
+    ///
+    /// let mut goal = State::new();
+    /// goal.set("goal_met", true);
+    ///
+    /// // Plan should be empty since goal is already satisfied
+    /// let plan = planner.plan(&state, &goal).unwrap();
+    /// assert!(plan.is_empty());
+    /// ```
     pub fn plan(&self, current_state: &State, goal_state: &State) -> Result<Vec<Action>> {
         self.search_algorithm
             .search(&self.actions, current_state, goal_state)
     }
 }
 
+/// Implementation of Clone for Planner.
+///
+/// Note that cloning a planner will preserve the actions but will reset the search
+/// algorithm to the default A* search, since trait objects cannot be directly cloned.
+///
+/// # Examples
+///
+/// ```
+/// use goaprs::{Action, DijkstraSearch, Planner};
+///
+/// // Create a planner with a custom search algorithm
+/// let actions = vec![Action::new("example", 1.0).unwrap()];
+/// let original = Planner::with_search_algorithm(actions, Box::new(DijkstraSearch));
+///
+/// // When cloned, it will use the default A* search
+/// let cloned = original.clone();
+/// ```
 impl Clone for Planner {
     fn clone(&self) -> Self {
         // Since we can't clone the boxed trait object directly,

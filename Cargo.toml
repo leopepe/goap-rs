@@ -2,7 +2,7 @@
 name = "goaprs"
 version = "0.2.0"
 edition = "2021"
-authors = ["GOAP Rust Team"]
+authors = ["Leonardo Pepe de Freitas <lpepefreitas@gmail.com>"]
 description = "Goal Oriented Action Planning implementation in Rust"
 license = "MIT"
 
